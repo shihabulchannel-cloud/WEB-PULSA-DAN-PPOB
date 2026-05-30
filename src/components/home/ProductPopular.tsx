@@ -1,9 +1,12 @@
+
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Flame, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Flame, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils-app';
+import { getBrandAsset, getBrandInitials, getBrandFallbackColor } from '@/lib/brandAssets';
 
 interface Product {
   id: string;
@@ -13,6 +16,28 @@ interface Product {
   image_url: string;
   category_id: string;
   categories?: { name: string; slug: string };
+}
+
+function BrandLogo({ brand, imageUrl }: { brand: string; imageUrl?: string }) {
+  const [logoError, setLogoError] = useState(false);
+  const asset = getBrandAsset(brand);
+  const gradient = asset?.gradient || getBrandFallbackColor(brand);
+
+  if (imageUrl && !logoError) {
+    return <img src={imageUrl} alt={brand} className="w-full h-full object-cover" onError={() => setLogoError(true)} />;
+  }
+  if (asset && !logoError) {
+    return (
+      <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${gradient}`}>
+        <img src={asset.logoUrl} alt={brand} className="w-3/5 h-3/5 object-contain drop-shadow-md" onError={() => setLogoError(true)} />
+      </div>
+    );
+  }
+  return (
+    <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${gradient}`}>
+      <span className="text-white font-bold text-3xl drop-shadow">{getBrandInitials(brand)}</span>
+    </div>
+  );
 }
 
 export default function ProductPopular() {
@@ -47,7 +72,7 @@ export default function ProductPopular() {
 
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {[...Array(12)].map((_, i) => <div key={i} className="skeleton h-48 rounded-2xl" />)}
+            {[...Array(12)].map((_, i) => <div key={i} className="skeleton h-52 rounded-2xl" />)}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -69,17 +94,11 @@ function ProductCard({ product }: { product: Product }) {
       to={`/product/${product.id}`}
       className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 shadow-card hover:shadow-brand transition-all duration-300 hover:-translate-y-1"
     >
-      {/* Image */}
-      <div className="aspect-square bg-gradient-to-br from-primary/10 to-secondary/10 relative overflow-hidden">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ShoppingCart className="w-8 h-8 text-primary/30" />
-          </div>
-        )}
+      {/* Brand Image */}
+      <div className="aspect-square relative overflow-hidden">
+        <BrandLogo brand={product.brand} imageUrl={product.image_url} />
         {cat && (
-          <span className="absolute top-2 left-2 text-[10px] font-medium bg-primary/90 text-primary-foreground px-2 py-0.5 rounded-full">
+          <span className="absolute top-2 left-2 text-[10px] font-medium bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
             {cat.name}
           </span>
         )}
@@ -88,7 +107,7 @@ function ProductCard({ product }: { product: Product }) {
       <div className="p-3">
         <p className="text-xs text-muted-foreground mb-0.5">{product.brand}</p>
         <p className="text-sm font-semibold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-2">{product.name}</p>
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-1.5">
           <span className="text-sm font-bold text-primary">{formatCurrency(product.sell_price)}</span>
         </div>
         <Button size="sm" className="w-full mt-2 h-8 text-xs gradient-button text-primary-foreground hover:opacity-90 transition-opacity">

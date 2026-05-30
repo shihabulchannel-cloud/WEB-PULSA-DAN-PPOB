@@ -82,7 +82,7 @@ export default function HeroBanner() {
               </Button>
             </Link>
             <Link to="/transaction">
-              <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button size="lg" className="bg-transparent border-2 border-primary-foreground/60 text-primary-foreground hover:bg-primary-foreground/15 hover:border-primary-foreground font-medium px-8 transition-all">
                 Cek Transaksi
               </Button>
             </Link>
@@ -142,7 +142,7 @@ function HeroContent({ title, subtitle }: { title: string; subtitle: string }) {
             </Button>
           </Link>
           <Link to="/transaction">
-            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+            <Button size="lg" className="bg-transparent border-2 border-primary-foreground/60 text-primary-foreground hover:bg-primary-foreground/15 hover:border-primary-foreground font-medium px-8 transition-all">
               Cek Transaksi
             </Button>
           </Link>

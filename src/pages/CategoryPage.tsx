@@ -1,30 +1,18 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Gamepad2, Phone, Wifi, Wallet, FileText, Ticket, Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils-app';
 import { Link } from 'react-router-dom';
+import { getBrandAsset, getBrandInitials, getBrandFallbackColor } from '@/lib/brandAssets';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Gamepad2, Phone, Wifi, Wallet, FileText, Ticket,
-};
-
-const brandColorMap: Record<string, string> = {
-  'Mobile Legends': 'bg-blue-100 text-blue-700',
-  'Free Fire': 'bg-orange-100 text-orange-700',
-  'PUBG Mobile': 'bg-yellow-100 text-yellow-700',
-  'Telkomsel': 'bg-red-100 text-red-700',
-  'XL': 'bg-blue-100 text-blue-700',
-  'Indosat': 'bg-yellow-100 text-yellow-700',
-  'DANA': 'bg-blue-100 text-blue-700',
-  'OVO': 'bg-purple-100 text-purple-700',
-  'GoPay': 'bg-green-100 text-green-700',
-  'PLN': 'bg-yellow-100 text-yellow-700',
 };
 
 interface Category {
@@ -32,6 +20,29 @@ interface Category {
 }
 interface Product {
   id: string; name: string; brand: string; sell_price: number; image_url: string; is_active: boolean;
+}
+
+function BrandLogo({ brand, imageUrl, size = 'md' }: { brand: string; imageUrl?: string; size?: 'sm' | 'md' }) {
+  const [logoError, setLogoError] = useState(false);
+  const asset = getBrandAsset(brand);
+  const gradient = asset?.gradient || getBrandFallbackColor(brand);
+  const textSize = size === 'sm' ? 'text-xl' : 'text-2xl';
+
+  if (imageUrl && !logoError) {
+    return <img src={imageUrl} alt={brand} className="w-full h-full object-cover" onError={() => setLogoError(true)} />;
+  }
+  if (asset && !logoError) {
+    return (
+      <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${gradient}`}>
+        <img src={asset.logoUrl} alt={brand} className="w-3/5 h-3/5 object-contain drop-shadow-md" onError={() => setLogoError(true)} />
+      </div>
+    );
+  }
+  return (
+    <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${gradient}`}>
+      <span className={`text-white font-bold ${textSize} drop-shadow`}>{getBrandInitials(brand)}</span>
+    </div>
+  );
 }
 
 export default function CategoryPage() {
@@ -146,23 +157,15 @@ export default function CategoryPage() {
                   to={`/product/${product.id}`}
                   className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 shadow-card hover:shadow-brand transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="aspect-square bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <ShoppingCart className="w-8 h-8 text-primary/30" />
-                    )}
+                  <div className="aspect-square relative overflow-hidden">
+                    <BrandLogo brand={product.brand} imageUrl={product.image_url} />
                   </div>
                   <div className="p-3">
                     {product.brand && (
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${brandColorMap[product.brand] || 'bg-muted text-muted-foreground'}`}>
-                        {product.brand}
-                      </span>
+                      <p className="text-xs text-muted-foreground mb-0.5">{product.brand}</p>
                     )}
-                    <p className="text-sm font-semibold text-foreground mt-1.5 leading-tight line-clamp-2 group-hover:text-primary transition-colors">{product.name}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm font-bold text-primary">{formatCurrency(product.sell_price)}</span>
-                    </div>
+                    <p className="text-sm font-semibold text-foreground mt-0.5 leading-tight line-clamp-2 group-hover:text-primary transition-colors">{product.name}</p>
+                    <p className="text-sm font-bold text-primary mt-1.5">{formatCurrency(product.sell_price)}</p>
                     <Button size="sm" className="w-full mt-2 h-8 text-xs gradient-button text-primary-foreground hover:opacity-90">
                       Beli Sekarang
                     </Button>

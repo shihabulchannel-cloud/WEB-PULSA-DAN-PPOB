@@ -1,7 +1,11 @@
+
 import HomePage from "./pages/HomePage";
 import CategoryPage from "./pages/CategoryPage";
 import ProductPage from "./pages/ProductPage";
 import TransactionPage from "./pages/TransactionPage";
+import TransactionSearchPage from "./pages/TransactionSearchPage";
+import SearchPage from "./pages/SearchPage";
+import StaticPage from "./pages/StaticPage";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -25,7 +29,17 @@ export const routers = [
   { path: "/", name: "home", element: <HomePage /> },
   { path: "/category/:slug", name: "category", element: <CategoryPage /> },
   { path: "/product/:id", name: "product", element: <ProductPage /> },
+  { path: "/transaction", name: "transaction-search", element: <TransactionSearchPage /> },
   { path: "/transaction/:invoiceNo", name: "transaction", element: <TransactionPage /> },
+  { path: "/search", name: "search", element: <SearchPage /> },
+
+  // Static Pages
+  { path: "/about", name: "about", element: <StaticPage page="about" /> },
+  { path: "/how-to-buy", name: "how-to-buy", element: <StaticPage page="how-to-buy" /> },
+  { path: "/faq", name: "faq", element: <StaticPage page="faq" /> },
+  { path: "/privacy", name: "privacy", element: <StaticPage page="privacy" /> },
+  { path: "/terms", name: "terms", element: <StaticPage page="terms" /> },
+  { path: "/blog", name: "blog", element: <StaticPage page="about" /> },
 
   // Admin Routes
   { path: "/admin/login", name: "admin-login", element: <AdminLogin /> },
