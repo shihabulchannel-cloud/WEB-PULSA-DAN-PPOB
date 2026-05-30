@@ -44,8 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  // isAdmin: user must be authenticated AND have role='admin' in metadata
+  const isAdmin = !!user && (
+    user.user_metadata?.role === 'admin' ||
+    user.email === 'admin@shielacomcell.com'
+  );
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, isAdmin: !!user }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

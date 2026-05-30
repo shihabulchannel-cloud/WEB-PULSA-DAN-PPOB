@@ -6,7 +6,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
 
   if (loading) {
     return (
@@ -16,7 +16,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  if (!user || !isAdmin) {
     return <Navigate to="/admin/login" replace />;
   }
 

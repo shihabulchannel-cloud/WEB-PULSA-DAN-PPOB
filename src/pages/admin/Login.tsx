@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -28,26 +27,6 @@ export default function AdminLogin() {
       }
       toast({ title: 'Login berhasil', description: 'Selamat datang di panel admin' });
       navigate('/admin');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createDefaultAdmin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: 'admin@shielacomcell.com',
-        password: 'Admin@123456',
-        options: { emailRedirectTo: `${window.location.origin}/admin` }
-      });
-      if (!error) {
-        toast({ title: 'Admin dibuat', description: 'Akun admin@shielacomcell.com berhasil dibuat. Silakan login.' });
-        setEmail('admin@shielacomcell.com');
-        setPassword('Admin@123456');
-      } else {
-        toast({ title: 'Info', description: 'Akun sudah ada atau terjadi error. Coba login langsung.' });
-      }
     } finally {
       setLoading(false);
     }
@@ -109,19 +88,6 @@ export default function AdminLogin() {
               {loading ? 'Masuk...' : 'Masuk ke Panel Admin'}
             </Button>
           </form>
-
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center mb-2">Belum ada akun admin?</p>
-            <Button variant="outline" size="sm" onClick={createDefaultAdmin} disabled={loading} className="w-full text-xs">
-              Buat Akun Admin Default
-            </Button>
-          </div>
-
-          <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground">
-              <span className="font-medium">Default:</span> admin@shielacomcell.com / Admin@123456
-            </p>
-          </div>
         </div>
       </div>
     </div>

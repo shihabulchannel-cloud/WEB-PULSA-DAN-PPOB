@@ -1,9 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto as stdCrypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+async function createMD5(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await stdCrypto.subtle.digest("MD5", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -26,6 +35,15 @@ Deno.serve(async (req) => {
 
     if (txError || !tx) throw new Error("Transaction not found");
 
+    // IDEMPOTENCY: If already submitted to Digiflazz (success or processing), skip
+    if (tx.digiflazz_submitted_at && (tx.status === "success" || tx.status === "processing")) {
+      console.log(`Transaction ${transaction_id} already submitted at ${tx.digiflazz_submitted_at}, skipping.`);
+      return new Response(
+        JSON.stringify({ success: true, status: tx.status, skipped: true, reason: "Already submitted" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get Digiflazz credentials
     const { data: settings } = await supabase
       .from("settings")
@@ -44,12 +62,19 @@ Deno.serve(async (req) => {
       throw new Error("Digiflazz credentials not configured");
     }
 
-    const refId = `TRX-${Date.now()}`;
+    const refId = `TRX-${Date.now()}-${transaction_id.slice(0, 8)}`;
     const buyerSkuCode = (tx.products as { buyer_sku_code: string })?.buyer_sku_code || tx.product_sku;
 
-    // Create Digiflazz signature
+    // Create correct MD5 signature
     const signStr = `${username}${apiKey}${refId}`;
     const sign = await createMD5(signStr);
+
+    // Mark as submitted BEFORE sending to prevent double execution
+    await supabase.from("transactions").update({
+      digiflazz_submitted_at: new Date().toISOString(),
+      digiflazz_ref: refId,
+      status: "processing",
+    }).eq("id", transaction_id);
 
     // Send transaction to Digiflazz
     const startTime = Date.now();
@@ -86,7 +111,6 @@ Deno.serve(async (req) => {
 
     // Update transaction
     await supabase.from("transactions").update({
-      digiflazz_ref: refId,
       digiflazz_status: newStatus,
       digiflazz_message: result?.data?.message,
       digiflazz_sn: result?.data?.sn,
@@ -115,17 +139,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function createMD5(text: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  try {
-    const hashBuffer = await crypto.subtle.digest("MD5", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  } catch {
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-}

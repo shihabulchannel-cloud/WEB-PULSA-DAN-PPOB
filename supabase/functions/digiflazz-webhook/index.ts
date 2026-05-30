@@ -5,7 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// This edge function handles Digiflazz webhook callbacks
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -20,16 +19,27 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(rawBody);
     const { data } = payload;
 
-    // Log webhook
+    // Filter out sensitive headers before logging
+    const safeHeaders: Record<string, string> = {};
+    for (const [key, value] of req.headers.entries()) {
+      if (!["authorization", "x-service-role", "apikey"].includes(key.toLowerCase())) {
+        safeHeaders[key] = value;
+      }
+    }
+
+    const refId = data?.ref_id || null;
+
+    // Log webhook with ref_id for accurate lookup
     await supabase.from("webhook_logs").insert({
       source: "digiflazz",
       payload,
-      headers: Object.fromEntries(req.headers.entries()),
+      headers: safeHeaders,
+      ref_id: refId,
       is_valid: true,
       processed: false,
     });
 
-    if (!data?.ref_id) {
+    if (!refId) {
       return new Response(JSON.stringify({ success: false, error: "No ref_id" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -45,7 +55,7 @@ Deno.serve(async (req) => {
     const { data: tx } = await supabase
       .from("transactions")
       .select("id, invoice_no")
-      .or(`digiflazz_ref.eq.${data.ref_id},invoice_no.eq.${data.ref_id}`)
+      .or(`digiflazz_ref.eq.${refId},invoice_no.eq.${refId}`)
       .maybeSingle();
 
     if (tx) {
@@ -66,15 +76,14 @@ Deno.serve(async (req) => {
           },
         }).catch(() => {});
       }
-    }
 
-    // Mark as processed
-    await supabase
-      .from("webhook_logs")
-      .update({ processed: true })
-      .eq("source", "digiflazz")
-      .order("created_at", { ascending: false })
-      .limit(1);
+      // Mark specific webhook log as processed using ref_id
+      await supabase
+        .from("webhook_logs")
+        .update({ processed: true })
+        .eq("source", "digiflazz")
+        .eq("ref_id", refId);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json" },
@@ -83,7 +92,7 @@ Deno.serve(async (req) => {
     console.error("Digiflazz webhook error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

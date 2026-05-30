@@ -25,25 +25,24 @@ Deno.serve(async (req) => {
 
     if (!tx) throw new Error("Transaction not found");
 
-    // Get notification settings
+    // Get notification settings including site_url
     const { data: settings } = await supabase
       .from("settings")
       .select("key, value")
-      .in("key", ["fonnte_api_key", "smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from", "site_name"]);
+      .in("key", ["fonnte_api_key", "smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from", "site_name", "site_url"]);
 
     const sm = Object.fromEntries((settings || []).map((s: { key: string; value: string }) => [s.key, s.value]));
     const siteName = sm["site_name"] || "SHIELACOM CELL";
+    const siteUrl = sm["site_url"]?.replace(/\/$/, "") || "";
 
     const isSuccess = type === "topup_success" || type === "payment_success";
-    const subject = isSuccess
-      ? `✅ Transaksi Berhasil - ${tx.invoice_no}`
-      : `❌ Transaksi Gagal - ${tx.invoice_no}`;
-
     const message = isSuccess
       ? `Transaksi ${tx.product_name} untuk ${tx.target_id} berhasil diproses!\nInvoice: ${tx.invoice_no}\nSerial Number: ${tx.digiflazz_sn || "-"}`
       : `Maaf, transaksi ${tx.product_name} untuk ${tx.target_id} gagal diproses.\nInvoice: ${tx.invoice_no}\nSilakan hubungi customer service.`;
 
-    const notifications = [];
+    const statusUrl = siteUrl
+      ? `${siteUrl}/transaction/${tx.invoice_no}`
+      : `/transaction/${tx.invoice_no}`;
 
     // Insert in-app notification
     await supabase.from("notifications").insert({
@@ -56,11 +55,26 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
     });
 
+    const notifications: { channel: string; sent: boolean; note?: string }[] = [];
+
     // Send WhatsApp via Fonnte
     if (sm["fonnte_api_key"] && tx.customer_phone) {
       try {
-        const waMessage = `*${siteName}*\n\n${message}\n\nCek status: ${Deno.env.get("SUPABASE_URL")?.replace("https://", "")}/transaction/${tx.invoice_no}`;
-        
+        const statusLabel = isSuccess ? "BERHASIL" : "GAGAL";
+        const waMessage = [
+          `*${siteName}*`,
+          ``,
+          `Status transaksi Anda: *${statusLabel}*`,
+          ``,
+          `Produk: ${tx.product_name}`,
+          `Tujuan: ${tx.target_id}`,
+          `Invoice: ${tx.invoice_no}`,
+          isSuccess && tx.digiflazz_sn ? `Serial Number: ${tx.digiflazz_sn}` : null,
+          isSuccess ? null : `Hubungi CS kami untuk bantuan.`,
+          ``,
+          `Cek status: ${statusUrl}`,
+        ].filter(Boolean).join("\n");
+
         const waResponse = await fetch("https://api.fonnte.com/send", {
           method: "POST",
           headers: {
@@ -68,13 +82,13 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            target: tx.customer_phone,
+            target: tx.customer_phone.replace(/^0/, "62"),
             message: waMessage,
           }),
         });
 
         const waResult = await waResponse.json();
-        
+
         await supabase.from("notifications").insert({
           transaction_id,
           type,
@@ -92,33 +106,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Send Email via SMTP if configured
+    // Email notification placeholder (SMTP not yet implemented)
     if (sm["smtp_host"] && sm["smtp_user"] && tx.customer_email) {
-      try {
-        // Using Supabase's built-in email or a simple SMTP approach
-        const emailBody = `
-          <h2>${siteName}</h2>
-          <p>${message.replace(/\n/g, "<br>")}</p>
-          <p><a href="${Deno.env.get("SUPABASE_URL")?.replace("https://", "") || ""}/transaction/${tx.invoice_no}">Lihat Invoice</a></p>
-          <hr>
-          <small>Email ini dikirim otomatis oleh sistem ${siteName}</small>
-        `;
-
-        // Log email notification attempt
-        await supabase.from("notifications").insert({
-          transaction_id,
-          type,
-          channel: "email",
-          recipient: tx.customer_email,
-          message: emailBody,
-          is_sent: false,
-          error_message: "SMTP sending requires additional configuration",
-        });
-
-        notifications.push({ channel: "email", sent: false, note: "Configure SMTP in settings" });
-      } catch (emailError) {
-        console.error("Email notification error:", emailError);
-      }
+      await supabase.from("notifications").insert({
+        transaction_id,
+        type,
+        channel: "email",
+        recipient: tx.customer_email,
+        message: message,
+        is_sent: false,
+        error_message: "Configure SMTP or email provider in Settings",
+      });
+      notifications.push({ channel: "email", sent: false, note: "Configure SMTP in settings" });
     }
 
     return new Response(
