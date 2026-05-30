@@ -3109,13 +3109,759 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      api_logs: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          endpoint: string | null
+          error_message: string | null
+          id: string
+          is_success: boolean | null
+          request_data: Json | null
+          response_data: Json | null
+          service: string
+          status_code: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          is_success?: boolean | null
+          request_data?: Json | null
+          response_data?: Json | null
+          service: string
+          status_code?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          is_success?: boolean | null
+          request_data?: Json | null
+          response_data?: Json | null
+          service?: string
+          status_code?: number | null
+        }
+        Relationships: []
+      }
+      banners: {
+        Row: {
+          button_text: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          link_url: string | null
+          sort_order: number | null
+          subtitle: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          button_text?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          button_text?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      blog_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      blogs: {
+        Row: {
+          category_id: string | null
+          content: string | null
+          created_at: string | null
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          is_published: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          category_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_published?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          category_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_published?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blogs_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "blog_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          slug: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          slug: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      faq: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          question: string
+          sort_order: number | null
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          question: string
+          sort_order?: number | null
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          question?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          created_at: string | null
+          id: string
+          invoice_data: Json | null
+          invoice_no: string
+          transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invoice_data?: Json | null
+          invoice_no: string
+          transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invoice_data?: Json | null
+          invoice_no?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_transaction_id_fkey"
+            columns: ["transaction_id"]
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      markup_rules: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          markup_type: string | null
+          markup_value: number | null
+          product_id: string | null
+          rule_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          markup_type?: string | null
+          markup_value?: number | null
+          product_id?: string | null
+          rule_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          markup_type?: string | null
+          markup_value?: number | null
+          product_id?: string | null
+          rule_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "markup_rules_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "markup_rules_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          channel: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          is_sent: boolean | null
+          message: string
+          recipient: string | null
+          sent_at: string | null
+          transaction_id: string | null
+          type: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          is_sent?: boolean | null
+          message: string
+          recipient?: string | null
+          sent_at?: string | null
+          transaction_id?: string | null
+          type: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          is_sent?: boolean | null
+          message?: string
+          recipient?: string | null
+          sent_at?: string | null
+          transaction_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_transaction_id_fkey"
+            columns: ["transaction_id"]
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          code: string
+          created_at: string | null
+          fee_type: string | null
+          fee_value: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          max_amount: number | null
+          min_amount: number | null
+          name: string
+          sort_order: number | null
+          type: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          fee_type?: string | null
+          fee_value?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_amount?: number | null
+          min_amount?: number | null
+          name: string
+          sort_order?: number | null
+          type: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          fee_type?: string | null
+          fee_value?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_amount?: number | null
+          min_amount?: number | null
+          name?: string
+          sort_order?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          brand: string | null
+          buyer_product_status: boolean | null
+          buyer_sku_code: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          digiflazz_sku: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          markup_amount: number | null
+          modal_price: number | null
+          name: string
+          sell_price: number | null
+          seller_product_status: boolean | null
+          sku: string | null
+          sort_order: number | null
+          stock_status: string | null
+          unlimited_stock: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          brand?: string | null
+          buyer_product_status?: boolean | null
+          buyer_sku_code?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          digiflazz_sku?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          markup_amount?: number | null
+          modal_price?: number | null
+          name: string
+          sell_price?: number | null
+          seller_product_status?: boolean | null
+          sku?: string | null
+          sort_order?: number | null
+          stock_status?: string | null
+          unlimited_stock?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string | null
+          buyer_product_status?: boolean | null
+          buyer_sku_code?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          digiflazz_sku?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          markup_amount?: number | null
+          modal_price?: number | null
+          name?: string
+          sell_price?: number | null
+          seller_product_status?: boolean | null
+          sku?: string | null
+          sort_order?: number | null
+          stock_status?: string | null
+          unlimited_stock?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          avatar_url: string | null
+          comment: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          product_name: string | null
+          rating: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          comment: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          product_name?: string | null
+          rating?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          comment?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          product_name?: string | null
+          rating?: number | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          category_name: string | null
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          digiflazz_message: string | null
+          digiflazz_ref: string | null
+          digiflazz_sn: string | null
+          digiflazz_status: string | null
+          expired_at: string | null
+          id: string
+          invoice_no: string
+          markup_amount: number | null
+          modal_price: number
+          notes: string | null
+          payment_fee: number | null
+          payment_method_code: string | null
+          payment_method_id: string | null
+          payment_method_name: string | null
+          payment_paid_at: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          payment_url: string | null
+          product_id: string | null
+          product_name: string
+          product_sku: string | null
+          profit: number | null
+          quantity: number | null
+          sell_price: number
+          status: string | null
+          target_id: string
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          category_name?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          digiflazz_message?: string | null
+          digiflazz_ref?: string | null
+          digiflazz_sn?: string | null
+          digiflazz_status?: string | null
+          expired_at?: string | null
+          id?: string
+          invoice_no: string
+          markup_amount?: number | null
+          modal_price: number
+          notes?: string | null
+          payment_fee?: number | null
+          payment_method_code?: string | null
+          payment_method_id?: string | null
+          payment_method_name?: string | null
+          payment_paid_at?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          payment_url?: string | null
+          product_id?: string | null
+          product_name: string
+          product_sku?: string | null
+          profit?: number | null
+          quantity?: number | null
+          sell_price: number
+          status?: string | null
+          target_id: string
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          category_name?: string | null
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          digiflazz_message?: string | null
+          digiflazz_ref?: string | null
+          digiflazz_sn?: string | null
+          digiflazz_status?: string | null
+          expired_at?: string | null
+          id?: string
+          invoice_no?: string
+          markup_amount?: number | null
+          modal_price?: number
+          notes?: string | null
+          payment_fee?: number | null
+          payment_method_code?: string | null
+          payment_method_id?: string | null
+          payment_method_name?: string | null
+          payment_paid_at?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          payment_url?: string | null
+          product_id?: string | null
+          product_name?: string
+          product_sku?: string | null
+          profit?: number | null
+          quantity?: number | null
+          sell_price?: number
+          status?: string | null
+          target_id?: string
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          headers: Json | null
+          id: string
+          ip_address: string | null
+          is_valid: boolean | null
+          payload: Json | null
+          processed: boolean | null
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          headers?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_valid?: boolean | null
+          payload?: Json | null
+          processed?: boolean | null
+          source: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          headers?: Json | null
+          id?: string
+          ip_address?: string | null
+          is_valid?: boolean | null
+          payload?: Json | null
+          processed?: boolean | null
+          source?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      profit_reports: {
+        Row: {
+          date: string | null
+          failed_count: number | null
+          success_count: number | null
+          total_modal: number | null
+          total_profit: number | null
+          total_revenue: number | null
+          total_transactions: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      calculate_sell_price: {
+        Args: { p_modal_price: number; p_product_id: string }
+        Returns: number
+      }
+      generate_invoice_no: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

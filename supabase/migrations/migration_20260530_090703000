@@ -1,0 +1,527 @@
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- SETTINGS TABLE
+CREATE TABLE IF NOT EXISTS settings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  key TEXT UNIQUE NOT NULL,
+  value TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read settings" ON settings FOR SELECT USING (true);
+CREATE POLICY "Admins can manage settings" ON settings FOR ALL USING (auth.role() = 'authenticated');
+
+-- Insert default settings
+INSERT INTO settings (key, value) VALUES
+  ('site_name', 'SHIELACOM CELL'),
+  ('site_slogan', 'Solusi Top Up Game, Pulsa dan PPOB Termurah dan Terpercaya'),
+  ('site_logo', ''),
+  ('site_favicon', ''),
+  ('contact_whatsapp', '628123456789'),
+  ('contact_email', 'admin@shielacomcell.com'),
+  ('contact_instagram', '@shielacomcell'),
+  ('contact_facebook', 'shielacomcell'),
+  ('contact_twitter', '@shielacomcell'),
+  ('digiflazz_username', ''),
+  ('digiflazz_api_key', ''),
+  ('digiflazz_webhook_secret', ''),
+  ('tripay_api_key', ''),
+  ('tripay_private_key', ''),
+  ('tripay_merchant_code', ''),
+  ('tripay_mode', 'sandbox'),
+  ('fonnte_api_key', ''),
+  ('smtp_host', ''),
+  ('smtp_port', '587'),
+  ('smtp_user', ''),
+  ('smtp_pass', ''),
+  ('smtp_from', 'noreply@shielacomcell.com'),
+  ('admin_first_login', 'true'),
+  ('markup_global', '0'),
+  ('theme_primary', '220 90% 50%'),
+  ('theme_secondary', '260 80% 55%'),
+  ('theme_accent', '185 90% 50%')
+ON CONFLICT (key) DO NOTHING;
+
+-- CATEGORIES TABLE
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  icon TEXT,
+  image_url TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read active categories" ON categories FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage categories" ON categories FOR ALL USING (auth.role() = 'authenticated');
+
+-- Insert default categories
+INSERT INTO categories (name, slug, description, icon, sort_order) VALUES
+  ('Top Up Game', 'top-up-game', 'Top Up berbagai game online populer', 'Gamepad2', 1),
+  ('Pulsa', 'pulsa', 'Pulsa semua operator Indonesia', 'Phone', 2),
+  ('Paket Data', 'paket-data', 'Paket internet semua operator', 'Wifi', 3),
+  ('E-Wallet', 'e-wallet', 'Top up dompet digital', 'Wallet', 4),
+  ('PPOB', 'ppob', 'Pembayaran tagihan online', 'FileText', 5),
+  ('Voucher Digital', 'voucher-digital', 'Voucher game dan platform digital', 'Ticket', 6)
+ON CONFLICT (slug) DO NOTHING;
+
+-- PRODUCTS TABLE
+CREATE TABLE IF NOT EXISTS products (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  category_id UUID REFERENCES categories(id),
+  name TEXT NOT NULL,
+  brand TEXT,
+  description TEXT,
+  sku TEXT UNIQUE,
+  digiflazz_sku TEXT,
+  buyer_sku_code TEXT,
+  modal_price DECIMAL(15,2) DEFAULT 0,
+  sell_price DECIMAL(15,2) DEFAULT 0,
+  markup_amount DECIMAL(15,2) DEFAULT 0,
+  stock_status TEXT DEFAULT 'available',
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  image_url TEXT,
+  seller_product_status BOOLEAN DEFAULT true,
+  buyer_product_status BOOLEAN DEFAULT true,
+  unlimited_stock BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read active products" ON products FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage products" ON products FOR ALL USING (auth.role() = 'authenticated');
+
+-- MARKUP RULES TABLE
+CREATE TABLE IF NOT EXISTS markup_rules (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  rule_type TEXT NOT NULL CHECK (rule_type IN ('global', 'category', 'product')),
+  category_id UUID REFERENCES categories(id),
+  product_id UUID REFERENCES products(id),
+  markup_type TEXT DEFAULT 'fixed' CHECK (markup_type IN ('fixed', 'percentage')),
+  markup_value DECIMAL(15,2) DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE markup_rules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage markup rules" ON markup_rules FOR ALL USING (auth.role() = 'authenticated');
+
+-- Insert default global markup
+INSERT INTO markup_rules (rule_type, markup_type, markup_value) 
+VALUES ('global', 'fixed', 500)
+ON CONFLICT DO NOTHING;
+
+-- PAYMENT METHODS TABLE
+CREATE TABLE IF NOT EXISTS payment_methods (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('qris', 'virtual_account', 'bank_transfer', 'ewallet')),
+  icon TEXT,
+  fee_type TEXT DEFAULT 'fixed' CHECK (fee_type IN ('fixed', 'percentage')),
+  fee_value DECIMAL(10,2) DEFAULT 0,
+  min_amount DECIMAL(15,2) DEFAULT 10000,
+  max_amount DECIMAL(15,2) DEFAULT 50000000,
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read active payment methods" ON payment_methods FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage payment methods" ON payment_methods FOR ALL USING (auth.role() = 'authenticated');
+
+INSERT INTO payment_methods (name, code, type, fee_type, fee_value, sort_order) VALUES
+  ('QRIS', 'QRIS', 'qris', 'percentage', 0.7, 1),
+  ('Transfer BCA', 'BCAVA', 'virtual_account', 'fixed', 4000, 2),
+  ('Transfer BNI', 'BNIVA', 'virtual_account', 'fixed', 4000, 3),
+  ('Transfer BRI', 'BRIVA', 'virtual_account', 'fixed', 4000, 4),
+  ('Transfer Mandiri', 'MANDIRIVA', 'virtual_account', 'fixed', 4000, 5),
+  ('DANA', 'DANA', 'ewallet', 'fixed', 2500, 6),
+  ('OVO', 'OVO', 'ewallet', 'fixed', 2500, 7),
+  ('ShopeePay', 'SHOPEEPAY', 'ewallet', 'fixed', 2500, 8),
+  ('GoPay', 'GOPAY', 'ewallet', 'fixed', 2500, 9)
+ON CONFLICT (code) DO NOTHING;
+
+-- TRANSACTIONS TABLE
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  invoice_no TEXT UNIQUE NOT NULL,
+  product_id UUID REFERENCES products(id),
+  product_name TEXT NOT NULL,
+  product_sku TEXT,
+  category_name TEXT,
+  customer_name TEXT,
+  customer_email TEXT,
+  customer_phone TEXT,
+  target_id TEXT NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  modal_price DECIMAL(15,2) NOT NULL,
+  sell_price DECIMAL(15,2) NOT NULL,
+  markup_amount DECIMAL(15,2) DEFAULT 0,
+  payment_fee DECIMAL(15,2) DEFAULT 0,
+  total_amount DECIMAL(15,2) NOT NULL,
+  profit DECIMAL(15,2) DEFAULT 0,
+  payment_method_id UUID REFERENCES payment_methods(id),
+  payment_method_code TEXT,
+  payment_method_name TEXT,
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'expired', 'failed', 'refunded')),
+  payment_url TEXT,
+  payment_reference TEXT,
+  payment_paid_at TIMESTAMPTZ,
+  digiflazz_ref TEXT,
+  digiflazz_status TEXT DEFAULT 'pending' CHECK (digiflazz_status IN ('pending', 'processing', 'success', 'failed')),
+  digiflazz_message TEXT,
+  digiflazz_sn TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'success', 'failed', 'refunded')),
+  notes TEXT,
+  expired_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours'),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can create transactions" ON transactions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can read own transactions" ON transactions FOR SELECT USING (true);
+CREATE POLICY "Admins can manage transactions" ON transactions FOR ALL USING (auth.role() = 'authenticated');
+
+-- Enable realtime for transactions
+ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
+
+-- INVOICES TABLE
+CREATE TABLE IF NOT EXISTS invoices (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  transaction_id UUID REFERENCES transactions(id),
+  invoice_no TEXT UNIQUE NOT NULL,
+  invoice_data JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read invoices" ON invoices FOR SELECT USING (true);
+CREATE POLICY "Admins can manage invoices" ON invoices FOR ALL USING (auth.role() = 'authenticated');
+
+-- BANNERS TABLE
+CREATE TABLE IF NOT EXISTS banners (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  image_url TEXT,
+  link_url TEXT,
+  button_text TEXT DEFAULT 'Lihat Promo',
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE banners ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read active banners" ON banners FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage banners" ON banners FOR ALL USING (auth.role() = 'authenticated');
+
+INSERT INTO banners (title, subtitle, button_text, sort_order) VALUES
+  ('Top Up Game Termurah & Tercepat', 'Mobile Legends, Free Fire, PUBG, dan 100+ game lainnya', 'Top Up Sekarang', 1),
+  ('Bayar Tagihan Lebih Mudah', 'PLN, BPJS, PDAM, Internet & semua tagihan online', 'Bayar Sekarang', 2),
+  ('Pulsa & Paket Data Semua Operator', 'Harga terbaik, proses instan 24 jam', 'Beli Pulsa', 3)
+ON CONFLICT DO NOTHING;
+
+-- TESTIMONIALS TABLE
+CREATE TABLE IF NOT EXISTS testimonials (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  avatar_url TEXT,
+  rating INTEGER DEFAULT 5 CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT NOT NULL,
+  product_name TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read active testimonials" ON testimonials FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage testimonials" ON testimonials FOR ALL USING (auth.role() = 'authenticated');
+
+INSERT INTO testimonials (name, rating, comment, product_name) VALUES
+  ('Budi Santoso', 5, 'Proses cepat banget! Diamond ML langsung masuk dalam 1 menit. Harga juga lebih murah dari tempat lain.', 'Mobile Legends 86 Diamond'),
+  ('Siti Rahayu', 5, 'Sudah langganan di sini dari lama. Pelayanan 24 jam, kalau ada kendala langsung direspon. Recommended!', 'Pulsa Telkomsel 50K'),
+  ('Ahmad Fauzi', 5, 'Top up Free Fire di sini gampang banget, tinggal masukin ID, pilih nominal, bayar QRIS langsung jadi.', 'Free Fire 100 Diamond'),
+  ('Dewi Lestari', 4, 'Harga voucher Google Play lebih murah 5-10%. Proses juga cepat. Puas!', 'Google Play 150K'),
+  ('Rizki Pratama', 5, 'Bayar token PLN lewat sini, langsung dapat token dalam hitungan detik. Mudah dan praktis!', 'PLN Token 100K')
+ON CONFLICT DO NOTHING;
+
+-- FAQ TABLE
+CREATE TABLE IF NOT EXISTS faq (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  category TEXT DEFAULT 'general',
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE faq ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read active faq" ON faq FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage faq" ON faq FOR ALL USING (auth.role() = 'authenticated');
+
+INSERT INTO faq (question, answer, sort_order) VALUES
+  ('Berapa lama proses top up?', 'Proses top up berlangsung otomatis dan instan, biasanya dalam 1-5 menit setelah pembayaran terkonfirmasi. Untuk kondisi tertentu bisa memakan waktu hingga 30 menit.', 1),
+  ('Metode pembayaran apa saja yang tersedia?', 'Kami menerima berbagai metode pembayaran: QRIS, Virtual Account (BCA, BNI, BRI, Mandiri), E-Wallet (DANA, OVO, GoPay, ShopeePay), dan Transfer Bank.', 2),
+  ('Bagaimana jika transaksi saya gagal?', 'Jika transaksi gagal, sistem akan otomatis melakukan refund atau retry. Anda bisa cek status transaksi di halaman cek transaksi menggunakan nomor invoice.', 3),
+  ('Apakah saya perlu membuat akun untuk bertransaksi?', 'Tidak! Anda bisa langsung bertransaksi tanpa perlu membuat akun. Cukup isi data yang diperlukan dan lakukan pembayaran.', 4),
+  ('Bagaimana cara mengunduh invoice?', 'Setelah transaksi berhasil, Anda bisa mengunduh invoice PDF di halaman status transaksi menggunakan nomor invoice yang dikirim ke email Anda.', 5),
+  ('Apakah tersedia layanan 24 jam?', 'Ya! Layanan kami beroperasi 24 jam sehari, 7 hari seminggu secara otomatis. Untuk pertanyaan khusus, tim support kami siap membantu via WhatsApp.', 6)
+ON CONFLICT DO NOTHING;
+
+-- BLOGS TABLE
+CREATE TABLE IF NOT EXISTS blog_categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE blog_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read blog categories" ON blog_categories FOR SELECT USING (true);
+CREATE POLICY "Admins can manage blog categories" ON blog_categories FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE TABLE IF NOT EXISTS blogs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  category_id UUID REFERENCES blog_categories(id),
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  excerpt TEXT,
+  content TEXT,
+  featured_image TEXT,
+  meta_title TEXT,
+  meta_description TEXT,
+  tags TEXT[],
+  is_published BOOLEAN DEFAULT false,
+  published_at TIMESTAMPTZ,
+  view_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE blogs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read published blogs" ON blogs FOR SELECT USING (is_published = true);
+CREATE POLICY "Admins can manage blogs" ON blogs FOR ALL USING (auth.role() = 'authenticated');
+
+-- NOTIFICATIONS TABLE
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  transaction_id UUID REFERENCES transactions(id),
+  type TEXT NOT NULL CHECK (type IN ('payment_success', 'payment_failed', 'payment_expired', 'topup_success', 'topup_failed')),
+  channel TEXT NOT NULL CHECK (channel IN ('web', 'email', 'whatsapp', 'push')),
+  recipient TEXT,
+  message TEXT NOT NULL,
+  is_sent BOOLEAN DEFAULT false,
+  sent_at TIMESTAMPTZ,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage notifications" ON notifications FOR ALL USING (auth.role() = 'authenticated');
+
+-- ACTIVITY LOGS TABLE
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  admin_id UUID,
+  action TEXT NOT NULL,
+  entity_type TEXT,
+  entity_id UUID,
+  old_data JSONB,
+  new_data JSONB,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can read activity logs" ON activity_logs FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins can insert activity logs" ON activity_logs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- API LOGS TABLE
+CREATE TABLE IF NOT EXISTS api_logs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  service TEXT NOT NULL CHECK (service IN ('digiflazz', 'tripay', 'fonnte', 'smtp')),
+  endpoint TEXT,
+  request_data JSONB,
+  response_data JSONB,
+  status_code INTEGER,
+  is_success BOOLEAN DEFAULT false,
+  error_message TEXT,
+  duration_ms INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE api_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can read api logs" ON api_logs FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Service can insert api logs" ON api_logs FOR INSERT WITH CHECK (true);
+
+-- WEBHOOK LOGS TABLE
+CREATE TABLE IF NOT EXISTS webhook_logs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  source TEXT NOT NULL CHECK (source IN ('digiflazz', 'tripay')),
+  payload JSONB,
+  headers JSONB,
+  ip_address TEXT,
+  is_valid BOOLEAN DEFAULT false,
+  processed BOOLEAN DEFAULT false,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE webhook_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service can insert webhook logs" ON webhook_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admins can read webhook logs" ON webhook_logs FOR SELECT USING (auth.role() = 'authenticated');
+
+-- PROFIT REPORTS VIEW
+CREATE OR REPLACE VIEW profit_reports AS
+SELECT
+  DATE(created_at) as date,
+  COUNT(*) as total_transactions,
+  SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
+  SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_count,
+  SUM(CASE WHEN status = 'success' THEN sell_price ELSE 0 END) as total_revenue,
+  SUM(CASE WHEN status = 'success' THEN modal_price ELSE 0 END) as total_modal,
+  SUM(CASE WHEN status = 'success' THEN profit ELSE 0 END) as total_profit
+FROM transactions
+GROUP BY DATE(created_at)
+ORDER BY date DESC;
+
+-- FUNCTION: Auto generate invoice number
+CREATE OR REPLACE FUNCTION generate_invoice_no()
+RETURNS TEXT AS $$
+DECLARE
+  v_date TEXT;
+  v_seq TEXT;
+  v_count INTEGER;
+BEGIN
+  v_date := TO_CHAR(NOW(), 'YYYYMMDD');
+  SELECT COUNT(*) + 1 INTO v_count FROM transactions WHERE DATE(created_at) = CURRENT_DATE;
+  v_seq := LPAD(v_count::TEXT, 4, '0');
+  RETURN 'INV-' || v_date || '-' || v_seq;
+END;
+$$ LANGUAGE plpgsql;
+
+-- FUNCTION: Calculate sell price with markup
+CREATE OR REPLACE FUNCTION calculate_sell_price(p_product_id UUID, p_modal_price DECIMAL)
+RETURNS DECIMAL AS $$
+DECLARE
+  v_markup DECIMAL := 0;
+  v_product_markup DECIMAL;
+  v_category_markup DECIMAL;
+  v_global_markup DECIMAL;
+  v_category_id UUID;
+BEGIN
+  -- Get category_id for the product
+  SELECT category_id INTO v_category_id FROM products WHERE id = p_product_id;
+  
+  -- Check product-specific markup (highest priority)
+  SELECT COALESCE(markup_value, 0) INTO v_product_markup
+  FROM markup_rules 
+  WHERE rule_type = 'product' AND product_id = p_product_id AND is_active = true
+  LIMIT 1;
+  
+  IF v_product_markup IS NOT NULL THEN
+    RETURN p_modal_price + v_product_markup;
+  END IF;
+  
+  -- Check category markup
+  SELECT COALESCE(markup_value, 0) INTO v_category_markup
+  FROM markup_rules 
+  WHERE rule_type = 'category' AND category_id = v_category_id AND is_active = true
+  LIMIT 1;
+  
+  IF v_category_markup IS NOT NULL THEN
+    RETURN p_modal_price + v_category_markup;
+  END IF;
+  
+  -- Fall back to global markup
+  SELECT COALESCE(markup_value, 0) INTO v_global_markup
+  FROM markup_rules 
+  WHERE rule_type = 'global' AND is_active = true
+  LIMIT 1;
+  
+  RETURN p_modal_price + COALESCE(v_global_markup, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- TRIGGER: Update updated_at automatically
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER update_banners_updated_at BEFORE UPDATE ON banners FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- Add sample products
+INSERT INTO products (category_id, name, brand, sku, buyer_sku_code, modal_price, sell_price, markup_amount, sort_order) 
+SELECT 
+  c.id,
+  p.name,
+  p.brand,
+  p.sku,
+  p.buyer_sku_code,
+  p.modal_price,
+  p.modal_price + 500,
+  500,
+  p.sort_order
+FROM (VALUES
+  ('top-up-game', 'Mobile Legends 86 Diamond', 'Mobile Legends', 'ML-86', 'ml86', 20000, 1),
+  ('top-up-game', 'Mobile Legends 172 Diamond', 'Mobile Legends', 'ML-172', 'ml172', 39000, 2),
+  ('top-up-game', 'Mobile Legends 257 Diamond', 'Mobile Legends', 'ML-257', 'ml257', 58000, 3),
+  ('top-up-game', 'Mobile Legends 514 Diamond', 'Mobile Legends', 'ML-514', 'ml514', 110000, 4),
+  ('top-up-game', 'Mobile Legends 1050 Diamond', 'Mobile Legends', 'ML-1050', 'ml1050', 215000, 5),
+  ('top-up-game', 'Free Fire 70 Diamond', 'Free Fire', 'FF-70', 'ff70', 13000, 6),
+  ('top-up-game', 'Free Fire 140 Diamond', 'Free Fire', 'FF-140', 'ff140', 25000, 7),
+  ('top-up-game', 'Free Fire 355 Diamond', 'Free Fire', 'FF-355', 'ff355', 55000, 8),
+  ('top-up-game', 'PUBG 60 UC', 'PUBG Mobile', 'PUBG-60', 'pubg60', 15000, 9),
+  ('top-up-game', 'PUBG 325 UC', 'PUBG Mobile', 'PUBG-325', 'pubg325', 75000, 10),
+  ('pulsa', 'Pulsa Telkomsel 10.000', 'Telkomsel', 'TSEL-10', 'tsel10k', 10500, 11),
+  ('pulsa', 'Pulsa Telkomsel 25.000', 'Telkomsel', 'TSEL-25', 'tsel25k', 25500, 12),
+  ('pulsa', 'Pulsa Telkomsel 50.000', 'Telkomsel', 'TSEL-50', 'tsel50k', 50500, 13),
+  ('pulsa', 'Pulsa Telkomsel 100.000', 'Telkomsel', 'TSEL-100', 'tsel100k', 100500, 14),
+  ('pulsa', 'Pulsa XL 25.000', 'XL', 'XL-25', 'xl25k', 25000, 15),
+  ('pulsa', 'Pulsa XL 50.000', 'XL', 'XL-50', 'xl50k', 50000, 16),
+  ('pulsa', 'Pulsa Indosat 25.000', 'Indosat', 'ISAT-25', 'isat25k', 25000, 17),
+  ('pulsa', 'Pulsa Indosat 50.000', 'Indosat', 'ISAT-50', 'isat50k', 50000, 18),
+  ('paket-data', 'Telkomsel 1GB 30 Hari', 'Telkomsel', 'TSEL-DATA-1GB', 'tseldata1gb', 13500, 19),
+  ('paket-data', 'Telkomsel 3GB 30 Hari', 'Telkomsel', 'TSEL-DATA-3GB', 'tseldata3gb', 32000, 20),
+  ('paket-data', 'XL 1.5GB 30 Hari', 'XL', 'XL-DATA-1GB5', 'xldata1gb5', 12000, 21),
+  ('e-wallet', 'DANA 50.000', 'DANA', 'DANA-50', 'dana50k', 50000, 22),
+  ('e-wallet', 'DANA 100.000', 'DANA', 'DANA-100', 'dana100k', 100000, 23),
+  ('e-wallet', 'OVO 50.000', 'OVO', 'OVO-50', 'ovo50k', 50000, 24),
+  ('e-wallet', 'GoPay 50.000', 'GoPay', 'GOPAY-50', 'gopay50k', 50000, 25),
+  ('ppob', 'PLN Token 20.000', 'PLN', 'PLN-TOKEN-20', 'plntoken20k', 20000, 26),
+  ('ppob', 'PLN Token 50.000', 'PLN', 'PLN-TOKEN-50', 'plntoken50k', 50000, 27),
+  ('ppob', 'PLN Token 100.000', 'PLN', 'PLN-TOKEN-100', 'plntoken100k', 100000, 28),
+  ('ppob', 'BPJS Kesehatan', 'BPJS', 'BPJS-KES', 'bpjskes', 0, 29),
+  ('voucher-digital', 'Google Play 50.000', 'Google', 'GP-50', 'gplay50k', 50000, 30),
+  ('voucher-digital', 'Google Play 100.000', 'Google', 'GP-100', 'gplay100k', 100000, 31),
+  ('voucher-digital', 'Steam Wallet 100.000', 'Steam', 'STEAM-100', 'steam100k', 100000, 32),
+  ('voucher-digital', 'Garena Shells 100', 'Garena', 'GARENA-100', 'garena100', 14000, 33)
+) AS p(cat_slug, name, brand, sku, buyer_sku_code, modal_price, sort_order)
+JOIN categories c ON c.slug = p.cat_slug
+ON CONFLICT (sku) DO NOTHING;
