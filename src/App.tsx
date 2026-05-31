@@ -9,7 +9,20 @@ import { routers } from "./router";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, staleTime: 60000 },
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry on auth or not-found errors
+        if (error && typeof error === 'object') {
+          const code = String((error as Record<string, unknown>).code || '');
+          const status = Number((error as Record<string, unknown>).status || 0);
+          if (status === 401 || status === 403 || code === 'PGRST116') return false;
+        }
+        return failureCount < 1;
+      },
+      staleTime: 60000,
+      // Convert non-Error objects to proper Error instances
+      throwOnError: false,
+    },
   },
 });
 

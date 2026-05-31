@@ -17,13 +17,17 @@ export default function RecentTransactions() {
 
   useEffect(() => {
     const fetchRecent = async () => {
-      const { data } = await supabase
-        .from('transactions')
-        .select('id, product_name, target_id, sell_price, status, created_at')
-        .eq('status', 'success')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      setTransactions(data || []);
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('id, product_name, target_id, sell_price, status, created_at')
+          .eq('status', 'success')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (!error) setTransactions(data || []);
+      } catch {
+        // Silently ignore fetch errors (e.g. session issues)
+      }
     };
 
     fetchRecent();
