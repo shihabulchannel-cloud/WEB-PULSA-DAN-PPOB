@@ -1,230 +1,248 @@
-# SHIELACOM CELL — Implementation Plan
+# SHIELACOM CELL — Rebuild Total Premium Green Theme
 
 ## Context
-Build a fully functional digital product marketplace (Top Up Game, Pulsa, PPOB, E-Wallet, Voucher) setara Unipin/Codashop. Tech stack: React + Vite + TypeScript + Tailwind + Supabase. Payment gateway: **Tripay** (primary). WhatsApp notif: **Fonnte**. Digiflazz credentials configurable from admin panel.
+Rebuild total UI dari tema biru/ungu ke tema hijau premium (mirip Codashop/Unipin/Tokogame).
+Payment gateway: hapus Tripay, ganti Duitku + VIP Payment.
+Tambah section homepage baru, perbaiki navbar, dan tambah halaman Promo/Reseller.
 
 ---
 
-## PHASE 1: DATABASE SCHEMA
+## 1. Design System (index.css + tailwind.config.ts)
 
-**Migration SQL — semua tabel:**
-- `settings` — konfigurasi website (nama, logo, warna, API keys, SMTP, Fonnte)
-- `categories` — Top Up Game, Pulsa, PPOB, dll
-- `products` — linked ke category + provider, harga modal, harga jual, markup
-- `markup_rules` — global / per kategori / per produk
-- `transactions` — id, customer_name, customer_email, customer_phone, target_id, product_id, amount, payment_method, payment_status, digiflazz_status, invoice_no
-- `payment_methods` — QRIS, VA, Transfer, E-Wallet
-- `invoices` — linked transaction
-- `banners` — hero slider
-- `testimonials`
-- `faq`
-- `blogs` + `blog_categories`
-- `notifications` — in-app
-- `activity_logs` — admin actions
-- `api_logs` — Digiflazz API calls
-- `webhook_logs` — payment callbacks
-- `admins` (Supabase auth users dengan role check)
-- `profit_reports` — computed view
+### Warna Baru (HSL):
+```
+--primary: 150 82% 29%        (#0E8A4A)
+--primary-foreground: 0 0% 100%
+--primary-light: 148 65% 45%  (#14A85C)
+--primary-dark: 151 92% 22%   (#056B36)
+--primary-glow: 148 73% 55%   (#1CC96B)
+--secondary: 149 77% 36%      (#14A85C)
+--accent: 148 73% 45%         (#1CC96B)
+--background: 120 9% 97%      (#F8FAF8)
+--sidebar: 151 88% 10%        (dark green)
+```
 
-RLS: enabled semua tabel. Hanya admin authenticated bisa write. Public bisa read products/categories/banners/testimonials/faq/blogs.
+### Gradient Tokens (semua hijau):
+- `--gradient-hero`: hijau tua → hijau segar → emerald
+- `--gradient-primary`: hijau tua → hijau muda
+- `--gradient-button`: hijau 0% → emerald 100%
+- `--gradient-dark`: hijau sangat tua untuk footer
 
----
-
-## PHASE 2: DESIGN SYSTEM
-
-**File: `src/index.css`** — update design tokens:
-- `--primary`: biru (220 90% 50%)
-- `--primary-glow`: cyan (190 100% 60%)
-- `--secondary`: ungu (260 80% 55%)
-- `--accent`: cyan (185 90% 50%)
-- Gradient tokens: `--gradient-hero`, `--gradient-card`, `--gradient-button`
-- Animation: pulse, shimmer, float
-- Glassmorphism utility classes
-
-**File: `tailwind.config.ts`** — extend with brand colors + custom animations
+### Tambah CSS utilities:
+- `.wave-divider` — SVG wave separator antar section
+- `.section-curved` — section dengan border-radius bawah yang melengkung
+- Micro animation: `hover-lift`, `hover-scale`, `pulse-green`
+- Semua referensi warna biru/ungu dihapus
 
 ---
 
-## PHASE 3: ROUTING STRUCTURE
+## 2. Navbar (src/components/layout/Navbar.tsx) — REBUILD
 
-**`src/router.tsx`** — routes:
+### Menu baru:
+- Beranda → `/`
+- Produk → dropdown/submenu kategori
+- Cek Transaksi → `/transaction`
+- Promo → `/promo`
+- Reseller → `/reseller`
+- Bantuan → `/faq`
 
-### Public Routes
-- `/` — Homepage
-- `/category/:slug` — Category page
-- `/product/:slug` — Product detail + order form
-- `/checkout/:transactionId` — Checkout + payment
-- `/transaction/:invoiceNo` — Status & invoice
-- `/blog` — Blog list
-- `/blog/:slug` — Blog detail
-- `/faq` — FAQ page
-
-### Admin Routes (protected)
-- `/admin/login` — Admin login
-- `/admin` — Dashboard overview (charts, stats)
-- `/admin/products` — Product management + Digiflazz sync
-- `/admin/categories` — Category management
-- `/admin/transactions` — Transaction list + management
-- `/admin/markup` — Markup rules
-- `/admin/banners` — Banner management
-- `/admin/testimonials` — Testimoni
-- `/admin/blog` — Blog management
-- `/admin/faq` — FAQ management
-- `/admin/notifications` — Notification history
-- `/admin/reports` — Profit reports + export
-- `/admin/settings` — Website settings (API keys, SMTP, Fonnte, Tripay)
+### Perubahan:
+- Hapus tombol "Admin Login" di header customer
+- Tambah tombol WhatsApp (ikon WA, buka wa.me/{contact_whatsapp})
+- Search bar lebih menonjol, lebar di mobile
+- Navbar putih saat scroll, transparan di atas hero
+- Underline animasi pada item menu aktif
+- Mobile: full drawer dengan semua menu
 
 ---
 
-## PHASE 4: FRONTEND COMPONENTS
+## 3. Hero Banner (src/components/home/HeroBanner.tsx) — REBUILD
 
-### Layout
-- `src/components/layout/Navbar.tsx` — logo, kategori nav, cek transaksi
-- `src/components/layout/Footer.tsx` — info, sosmed, payment badge
-- `src/components/layout/AdminLayout.tsx` — sidebar + header
+### Layout baru:
+- Full width, min-height 560px, gradient hijau premium
+- Kiri: headline besar + deskripsi + 2 CTA buttons
+- Kanan: floating product cards animasi (4 kategori: Game, Pulsa, E-Wallet, PPOB)
+- Background: radial glow hijau + partikel titik abstrak
+- Auto-slide 4 banner dari DB (fallback: static hero)
+- Animasi smooth slide dengan opacity transition
+- Wave divider di bagian bawah hero (bentuk gelombang hijau ke putih)
 
-### Homepage Sections
-- `src/components/home/HeroBanner.tsx` — carousel banner
-- `src/components/home/CategoryGrid.tsx` — icon cards per kategori
-- `src/components/home/ProductPopular.tsx` — produk populer
-- `src/components/home/RecentTransactions.tsx` — live feed transaksi berhasil (realtime Supabase)
-- `src/components/home/Testimonials.tsx`
-- `src/components/home/FAQ.tsx`
-- `src/components/home/BlogSection.tsx`
-
-### Transaction Flow
-- `src/components/order/OrderForm.tsx` — input nomor/ID game + pilih nominal
-- `src/components/order/PaymentMethod.tsx` — pilih metode bayar
-- `src/components/order/CheckoutSummary.tsx` — ringkasan + bayar
-- `src/components/order/TransactionStatus.tsx` — status realtime + invoice
-
-### Admin Components
-- `src/components/admin/StatsCard.tsx`
-- `src/components/admin/SalesChart.tsx`
-- `src/components/admin/ProfitChart.tsx`
-- `src/components/admin/TransactionTable.tsx`
-- `src/components/admin/ProductTable.tsx`
-- `src/components/admin/DigiflazzSync.tsx`
+### 4 Default Banner Content (rendered dari DB atau fallback):
+1. "Top Up Game Murah!" — game controller illustration
+2. "Pulsa & Paket Data" — phone illustration  
+3. "PPOB Lengkap" — receipt/bill illustration
+4. "E-Wallet & Voucher" — wallet illustration
 
 ---
 
-## PHASE 5: EDGE FUNCTIONS (Backend Logic)
+## 4. Homepage Sections (src/pages/HomePage.tsx + new components)
 
-### `supabase/functions/digiflazz-sync/index.ts`
-- GET produk dari Digiflazz API
-- Upsert ke tabel `products`
-- Apply markup rules
-- Log ke `api_logs`
+### Section urutan baru:
+1. HeroBanner (rebuilt)
+2. **Features** (new) — "Keunggulan SHIELACOM CELL"
+3. CategoryGrid (updated colors)
+4. ProductPopular (updated colors)
+5. RecentTransactions (existing)
+6. **HowToBuy** (new) — 4 langkah mudah cara transaksi
+7. **ResellerBanner** (new) — CTA reseller bergabung
+8. Testimonials (existing)
+9. FAQ (existing)
+10. Footer
 
-### `supabase/functions/digiflazz-transaction/index.ts`
-- POST transaksi ke Digiflazz
-- Update status di `transactions`
-- Trigger notifikasi
+### src/components/home/Features.tsx (NEW):
+- 4 cards: Transaksi Instan, Harga Termurah, 24 Jam, Aman & Terpercaya
+- Ikon dari lucide-react (Zap, Tag, Clock, ShieldCheck)
+- Background hijau muda dengan border hijau halus
+- Animasi masuk saat scroll (animate-fade-in)
 
-### `supabase/functions/digiflazz-webhook/index.ts`
-- Terima callback Digiflazz
-- Update transaction status
-- Trigger invoice generation
-- Send notifikasi (email, WhatsApp via Fonnte)
+### src/components/home/HowToBuy.tsx (NEW):
+- 4 langkah: Pilih Produk → Isi Data → Bayar → Dapat Produk
+- Numbered steps dengan garis penghubung
+- Icon per langkah
+- Latar section putih dengan teks hijau
 
-### `supabase/functions/tripay-create-payment/index.ts`
-- Buat payment di Tripay
-- Return payment_url / VA number
-- Simpan di transactions
-
-### `supabase/functions/tripay-webhook/index.ts`
-- Verifikasi signature Tripay
-- Update payment_status
-- Trigger digiflazz-transaction
-
-### `supabase/functions/send-notification/index.ts`
-- Email via SMTP (nodemailer atau resend)
-- WhatsApp via Fonnte API
-- In-app notification insert
-
-### `supabase/functions/generate-invoice/index.ts`
-- Return invoice data JSON
-- Frontend render ke PDF (print/jsPDF)
-
-### `supabase/functions/export-report/index.ts`
-- Export Excel (xlsx) / CSV
-- Filter by date range
+### src/components/home/ResellerBanner.tsx (NEW):
+- Banner CTA reseller
+- Background gradient hijau gelap
+- Headline: "Daftar Jadi Reseller Sekarang"
+- Benefits: Harga Khusus, Komisi Menarik, Support 24 Jam
+- Tombol: Hubungi WhatsApp
 
 ---
 
-## PHASE 6: ADMIN AUTHENTICATION
+## 5. CategoryGrid (src/components/home/CategoryGrid.tsx) — UPDATE
 
-- Supabase auth untuk admin login
-- Middleware `src/hooks/useAdminAuth.ts` — check session + redirect
-- Default admin: admin@shielacomcell.com / Admin@123456
-- Force change password on first login (flag di settings)
-- `src/pages/admin/Login.tsx`
-
----
-
-## PHASE 7: MARKUP SYSTEM
-
-- Tabel `markup_rules` dengan priority: product > category > global
-- Function di database `calculate_sell_price(product_id)` → harga modal + markup tertinggi yang applicable
-- Setiap kali admin update markup → all product prices update otomatis via trigger
+- Warna icon gradient di-update ke variasi hijau
+- Tambah kategori: Token PLN, BPJS, PDAM, TV Kabel (jika ada di DB)
+- Card hover effect: border hijau + shadow hijau
+- Layout: 3 kolom mobile, 4 tablet, 5-6 desktop (max 10 kategori)
 
 ---
 
-## PHASE 8: REALTIME & SEO
+## 6. Product Cards — UPDATE COLORS
 
-- Supabase Realtime pada tabel `transactions` → live feed di homepage
-- `public/robots.txt` — sudah ada, update
-- `public/sitemap.xml` — generate dari blog + categories
-- Meta tags per halaman (Helmet / react-helmet-async)
-
----
-
-## PHASE 9: INVOICE & EXPORT
-
-### Invoice PDF
-- Render invoice di halaman `/transaction/:invoiceNo`
-- Browser `window.print()` dengan CSS `@media print`
-- Tampilkan: no invoice, produk, customer, jumlah, status, tanggal
-
-### Export Reports
-- Install `xlsx` dan `jspdf` packages
-- Edge function `export-report` return data
-- Frontend trigger download
+- Update `ProductPopular.tsx` dan `CategoryPage.tsx`
+- Hover border dari biru ke hijau
+- Badge "Populer" warna hijau
+- Button gradient hijau
 
 ---
 
-## KEY FILES TO MODIFY
-- `src/index.css` — design system overhaul
-- `tailwind.config.ts` — brand colors + animations
-- `src/router.tsx` — semua routes
-- `src/App.tsx` — add AuthProvider
-- `src/pages/Index.tsx` — homepage full rebuild
+## 7. Admin Settings (src/pages/admin/Settings.tsx) — MAJOR UPDATE
 
-## NEW FILES (key)
-- `src/lib/supabase.ts` — re-export client
-- `src/hooks/useAdminAuth.ts`
-- `src/hooks/useSettings.ts` — app settings context
-- `src/contexts/AuthContext.tsx`
-- `src/pages/admin/` — all admin pages
-- `src/components/home/` — homepage sections
-- `src/components/order/` — transaction flow
-- `src/components/layout/` — Navbar, Footer, AdminLayout
-- `supabase/functions/` — 6 edge functions
+### Hapus: Tripay section
+### Tambah:
+- **Duitku Payment Gateway**:
+  - Merchant Code, API Key, Callback URL, Return URL, Mode (sandbox/production)
+  - Tombol "Test Koneksi" → panggil Duitku inquiry API
+  - Status badge: Terhubung/Tidak Terhubung
+- **VIP Payment**:
+  - Merchant ID, API Key, Signature Key, Callback URL
+  - Tombol "Test Koneksi"
+  - Status badge
 
-## PACKAGES TO INSTALL
-- `react-helmet-async` — SEO meta tags
-- `jspdf` + `jspdf-autotable` — PDF invoice
-- `xlsx` — Excel export
-- `@tanstack/react-query` — already installed
+### Update section Digiflazz:
+- Tambah Tombol "Test Koneksi" → panggil Digiflazz ping/balance
+- Status badge realtime
 
-## VERIFICATION
-1. Homepage loads dengan kategori + produk dari DB
-2. Order flow: pilih produk → isi data → checkout → status page
-3. Admin login dengan admin@shielacomcell.com
-4. Admin dashboard tampil stats + grafik
-5. Digiflazz sync dari panel admin
-6. Tripay payment create + webhook callback
-7. Invoice download PDF works
-8. Export Excel/CSV dari laporan
-9. Markup update → harga produk berubah otomatis
-10. Notifikasi WhatsApp via Fonnte saat transaksi sukses
+### Update section Fonnte:
+- Tambah Tombol "Test Koneksi" → kirim WA test ke nomor admin
+- Status badge
+
+### Update sensitive keys list:
+- Hapus: tripay_*, tambah: duitku_*, vip_*
+
+---
+
+## 8. Edge Functions
+
+### Hapus (replace):
+- `tripay-create-payment` → `duitku-create-payment`
+- `tripay-webhook` → `duitku-webhook`
+
+### Tambah:
+- `vip-create-payment`
+- `vip-webhook`
+
+### Update ProductPage.tsx:
+- Ganti call `tripay-create-payment` → coba `duitku-create-payment` dulu, fallback `vip-create-payment`
+
+---
+
+## 9. New Pages
+
+### src/pages/PromoPage.tsx (NEW):
+- Hero hijau dengan teks "Promo Terkini"
+- Grid kartu promo (hardcoded + bisa diisi dari DB banners)
+- CTA hubungi WhatsApp untuk info promo
+
+### src/pages/ResellerPage.tsx (NEW):
+- Hero pengenalan program reseller
+- Benefit reseller (4 poin)
+- Cara daftar (3 langkah)
+- Form daftar (nama, WA, email) → kirim via WhatsApp
+- CTA WhatsApp
+
+---
+
+## 10. Database Migration
+
+```sql
+-- Tambah setting keys baru
+INSERT INTO settings (key, value) VALUES 
+  ('duitku_merchant_code', ''),
+  ('duitku_api_key', ''),
+  ('duitku_callback_url', ''),
+  ('duitku_return_url', ''),
+  ('duitku_mode', 'sandbox'),
+  ('vip_merchant_id', ''),
+  ('vip_api_key', ''),
+  ('vip_signature_key', ''),
+  ('vip_callback_url', '')
+ON CONFLICT (key) DO NOTHING;
+```
+
+---
+
+## 11. Router Update (src/router.tsx)
+
+Tambah routes:
+- `/promo` → PromoPage
+- `/reseller` → ResellerPage
+
+---
+
+## Files Modified:
+1. `src/index.css` — green design system
+2. `tailwind.config.ts` — green colors  
+3. `src/components/layout/Navbar.tsx` — new menu + WA button
+4. `src/components/layout/Footer.tsx` — green footer colors
+5. `src/components/home/HeroBanner.tsx` — premium hero rebuild
+6. `src/components/home/CategoryGrid.tsx` — green colors
+7. `src/components/home/ProductPopular.tsx` — green colors
+8. `src/components/home/Testimonials.tsx` — green accent
+9. `src/components/home/FAQ.tsx` — green accent
+10. `src/pages/HomePage.tsx` — add new sections
+11. `src/pages/admin/Settings.tsx` — Duitku + VIP Payment
+12. `src/router.tsx` — new routes
+
+## Files Created:
+1. `src/components/home/Features.tsx`
+2. `src/components/home/HowToBuy.tsx`
+3. `src/components/home/ResellerBanner.tsx`
+4. `src/pages/PromoPage.tsx`
+5. `src/pages/ResellerPage.tsx`
+6. `supabase/functions/duitku-create-payment/index.ts`
+7. `supabase/functions/duitku-webhook/index.ts`
+8. `supabase/functions/vip-create-payment/index.ts`
+9. `supabase/functions/vip-webhook/index.ts`
+
+---
+
+## Verification:
+1. Homepage tampil hero hijau premium dengan wave divider
+2. Navbar menampilkan menu baru + tombol WA
+3. Semua warna ungu/biru diganti hijau
+4. Settings admin tampil Duitku + VIP Payment dengan tombol test
+5. Route /promo dan /reseller berfungsi
+6. Semua lint: 0 errors
