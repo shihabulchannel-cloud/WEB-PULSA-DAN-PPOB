@@ -6,6 +6,8 @@ import TransactionPage from "./pages/TransactionPage";
 import TransactionSearchPage from "./pages/TransactionSearchPage";
 import SearchPage from "./pages/SearchPage";
 import StaticPage from "./pages/StaticPage";
+import PromoPage from "./pages/PromoPage";
+import ResellerPage from "./pages/ResellerPage";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -40,6 +42,8 @@ export const routers = [
   { path: "/privacy", name: "privacy", element: <StaticPage page="privacy" /> },
   { path: "/terms", name: "terms", element: <StaticPage page="terms" /> },
   { path: "/blog", name: "blog", element: <StaticPage page="about" /> },
+  { path: "/promo", name: "promo", element: <PromoPage /> },
+  { path: "/reseller", name: "reseller", element: <ResellerPage /> },
 
   // Admin Routes
   { path: "/admin/login", name: "admin-login", element: <AdminLogin /> },

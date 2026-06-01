@@ -5,7 +5,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Settings as SettingsIcon, Globe, Phone, CreditCard, Mail, MessageCircle } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Globe, CreditCard, Mail, MessageCircle, Zap } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,15 +27,56 @@ const sections = [
       { key: 'digiflazz_api_key', label: 'API Key Digiflazz', placeholder: 'xxxxxxxx', type: 'password' },
       { key: 'digiflazz_webhook_secret', label: 'Webhook Secret', placeholder: 'secret key', type: 'password' },
     ],
+    info: {
+      color: 'bg-blue-50 border-blue-200 text-blue-700',
+      codeClass: 'bg-blue-100',
+      title: 'Cara mendapatkan API Key Digiflazz:',
+      lines: [
+        'Login ke digiflazz.com → Pengaturan → API',
+        'Copy Username dan Production API Key',
+      ],
+      webhookKey: 'digiflazz',
+      webhookPath: 'functions/v1/digiflazz-webhook',
+    },
   },
   {
-    id: 'tripay', label: 'Tripay Payment', icon: CreditCard,
+    id: 'duitku', label: 'Duitku Payment', icon: CreditCard,
     fields: [
-      { key: 'tripay_merchant_code', label: 'Merchant Code', placeholder: 'Txxxx' },
-      { key: 'tripay_api_key', label: 'API Key', placeholder: 'API Key Tripay', type: 'password' },
-      { key: 'tripay_private_key', label: 'Private Key', placeholder: 'Private Key Tripay', type: 'password' },
-      { key: 'tripay_mode', label: 'Mode (sandbox/production)', placeholder: 'sandbox' },
+      { key: 'duitku_merchant_code', label: 'Merchant Code', placeholder: 'Dxxxxxx' },
+      { key: 'duitku_api_key', label: 'API Key', placeholder: 'API Key dari Duitku', type: 'password' },
+      { key: 'duitku_mode', label: 'Mode (sandbox/production)', placeholder: 'sandbox' },
     ],
+    info: {
+      color: 'bg-green-50 border-green-200 text-green-700',
+      codeClass: 'bg-green-100',
+      title: 'Cara mendapatkan API Duitku:',
+      lines: [
+        'Login ke my.duitku.com → Project → Pilih project Anda',
+        'Copy Merchant Code dan API Key',
+        'Set mode ke "sandbox" untuk testing, "production" untuk live',
+      ],
+      webhookKey: 'duitku',
+      webhookPath: 'functions/v1/duitku-webhook',
+    },
+  },
+  {
+    id: 'vip_payment', label: 'VIP Payment', icon: Zap,
+    fields: [
+      { key: 'vip_merchant_id', label: 'Merchant ID', placeholder: 'Merchant ID VIP Payment' },
+      { key: 'vip_secret_key', label: 'Secret Key', placeholder: 'Secret Key VIP Payment', type: 'password' },
+      { key: 'vip_mode', label: 'Mode (sandbox/production)', placeholder: 'sandbox' },
+    ],
+    info: {
+      color: 'bg-purple-50 border-purple-200 text-purple-700',
+      codeClass: 'bg-purple-100',
+      title: 'Cara mendapatkan API VIP Payment:',
+      lines: [
+        'Login ke vipayment.id → Dashboard → API Settings',
+        'Copy Merchant ID dan Secret Key',
+      ],
+      webhookKey: 'vip',
+      webhookPath: 'functions/v1/vip-payment-webhook',
+    },
   },
   {
     id: 'smtp', label: 'Email SMTP', icon: Mail,
@@ -52,6 +93,17 @@ const sections = [
     fields: [
       { key: 'fonnte_api_key', label: 'Fonnte API Key', placeholder: 'API Key dari Fonnte', type: 'password' },
     ],
+    info: {
+      color: 'bg-teal-50 border-teal-200 text-teal-700',
+      codeClass: 'bg-teal-100',
+      title: 'Cara mendapatkan Fonnte API Key:',
+      lines: [
+        'Login ke app.fonnte.com',
+        'Tambahkan device WhatsApp → Copy Token/API Key',
+      ],
+      webhookKey: null,
+      webhookPath: null,
+    },
   },
 ];
 
@@ -74,8 +126,11 @@ export default function AdminSettings() {
       for (const update of updates) {
         await supabase.from('settings').upsert(update, { onConflict: 'key' });
       }
-      // Store sensitive keys as Supabase secrets via edge function
-      const sensitiveKeys = ['digiflazz_api_key', 'digiflazz_webhook_secret', 'tripay_api_key', 'tripay_private_key', 'smtp_pass', 'fonnte_api_key'];
+      const sensitiveKeys = [
+        'digiflazz_api_key', 'digiflazz_webhook_secret',
+        'duitku_api_key', 'vip_secret_key',
+        'smtp_pass', 'fonnte_api_key',
+      ];
       const secrets: Record<string, string> = {};
       sensitiveKeys.forEach(k => { if (values[k]) secrets[k] = values[k]; });
       if (Object.keys(secrets).length > 0) {
@@ -114,7 +169,7 @@ export default function AdminSettings() {
                 const Icon = s.icon;
                 return (
                   <button key={s.id} onClick={() => setActiveSection(s.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeSection === s.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeSection === s.id ? 'gradient-button text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                     <Icon className="w-4 h-4" />
                     {s.label}
                   </button>
@@ -146,20 +201,20 @@ export default function AdminSettings() {
                   ))}
                 </div>
 
-                {section.id === 'digiflazz' && (
-                  <div className="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
-                    <p className="font-medium mb-1">Cara mendapatkan API Key Digiflazz:</p>
-                    <p>1. Login ke digiflazz.com → Pengaturan → API</p>
-                    <p>2. Copy Username dan Production API Key</p>
-                    <p>3. Set Webhook URL ke: <code className="text-xs bg-blue-100 px-1 py-0.5 rounded">{window.location.origin}/webhook/digiflazz</code></p>
-                  </div>
-                )}
-                {section.id === 'tripay' && (
-                  <div className="mt-5 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
-                    <p className="font-medium mb-1">Cara mendapatkan API Tripay:</p>
-                    <p>1. Login ke tripay.co.id → Merchant → API</p>
-                    <p>2. Copy Merchant Code, API Key, dan Private Key</p>
-                    <p>3. Set Callback URL ke: <code className="text-xs bg-green-100 px-1 py-0.5 rounded">[supabase-url]/functions/v1/tripay-webhook</code></p>
+                {'info' in section && section.info && (
+                  <div className={`mt-5 p-4 border rounded-xl text-sm ${section.info.color}`}>
+                    <p className="font-medium mb-2">{section.info.title}</p>
+                    {section.info.lines.map((line, i) => (
+                      <p key={i}>{i + 1}. {line}</p>
+                    ))}
+                    {section.info.webhookPath && (
+                      <p className="mt-1">
+                        {section.info.lines.length + 1}. Set Callback/Webhook URL ke:{' '}
+                        <code className={`text-xs px-1.5 py-0.5 rounded ${section.info.codeClass}`}>
+                          {`[supabase-url]/${section.info.webhookPath}`}
+                        </code>
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

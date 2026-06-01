@@ -1,0 +1,9 @@
+-- Add Duitku and VIP Payment settings keys
+INSERT INTO settings (key, value) VALUES
+  ('duitku_merchant_code', ''),
+  ('duitku_api_key', ''),
+  ('duitku_mode', 'sandbox'),
+  ('vip_merchant_id', ''),
+  ('vip_secret_key', ''),
+  ('vip_mode', 'sandbox')
+ON CONFLICT (key) DO NOTHING;

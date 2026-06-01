@@ -23,8 +23,8 @@ export default function Footer() {
               const Icon = item.icon;
               return (
                 <div key={item.title} className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl glass-primary flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-6 h-6 text-primary-glow" />
+                  <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-6 h-6 text-accent-light" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">{item.title}</p>
@@ -43,11 +43,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
-                <Zap className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-accent-light" />
               </div>
               <div>
-                <p className="font-bold text-base text-gradient">{siteName}</p>
+                <p className="font-bold text-base text-accent-light">{siteName}</p>
                 <p className="text-[10px] text-primary-foreground/50">Top Up & PPOB</p>
               </div>
             </div>
@@ -55,14 +55,14 @@ export default function Footer() {
             <div className="flex gap-3">
               {instagram && (
                 <a href={`https://instagram.com/${instagram.replace('@', '')}`} target="_blank" rel="noreferrer"
-                  className="w-9 h-9 rounded-lg glass-primary flex items-center justify-center hover:bg-primary/30 transition-colors">
+                  className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
                   <Instagram className="w-4 h-4" />
                 </a>
               )}
-              <a href="#" className="w-9 h-9 rounded-lg glass-primary flex items-center justify-center hover:bg-primary/30 transition-colors">
+              <a href="#" className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-lg glass-primary flex items-center justify-center hover:bg-primary/30 transition-colors">
+              <a href="#" className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
                 <Twitter className="w-4 h-4" />
               </a>
             </div>
@@ -136,7 +136,7 @@ export default function Footer() {
               <p className="text-xs text-primary-foreground/40 mb-2 font-medium">Metode Pembayaran</p>
               <div className="flex flex-wrap gap-1.5">
                 {['QRIS', 'BCA', 'BNI', 'BRI', 'DANA', 'OVO', 'GoPay'].map(pm => (
-                  <span key={pm} className="text-xs px-2 py-1 rounded glass-primary text-primary-foreground/70 border border-primary/20">
+                  <span key={pm} className="text-xs px-2 py-1 rounded bg-white/10 border border-white/20 text-primary-foreground/70">
                     {pm}
                   </span>
                 ))}
@@ -151,7 +151,7 @@ export default function Footer() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-primary-foreground/40">
             <p>&copy; {new Date().getFullYear()} {siteName}. All rights reserved.</p>
-            <p>Powered by <span className="text-primary-glow">Digiflazz</span> & <span className="text-primary-glow">Tripay</span></p>
+            <p>Powered by <span className="text-accent-light">Digiflazz</span> & <span className="text-accent-light">Duitku</span></p>
           </div>
         </div>
       </div>
