@@ -54,15 +54,20 @@ const sections = [
   {
     id: 'digiflazz', label: 'Digiflazz', icon: SettingsIcon,
     fields: [
-      { key: 'digiflazz_username', label: 'Username Digiflazz', placeholder: 'username' },
-      { key: 'digiflazz_api_key', label: 'API Key Digiflazz', placeholder: 'xxxxxxxx', type: 'password' },
-      { key: 'digiflazz_webhook_secret', label: 'Webhook Secret', placeholder: 'secret key', type: 'password' },
+      { key: 'digiflazz_username', label: 'Username Digiflazz', placeholder: 'Username akun digiflazz.com' },
+      { key: 'digiflazz_api_key', label: 'API Key Digiflazz (Production Key)', placeholder: 'Production API Key dari Digiflazz', type: 'password' },
     ],
     info: {
       color: 'bg-blue-50 border-blue-200 text-blue-700',
       codeClass: 'bg-blue-100',
       title: 'Cara mendapatkan API Key Digiflazz:',
-      lines: ['Login ke digiflazz.com → Pengaturan → API', 'Copy Username dan Production API Key'],
+      lines: [
+        '1. Login ke digiflazz.com',
+        '2. Klik menu Pengaturan (pojok kanan atas)',
+        '3. Cari bagian API Key',
+        '4. Copy Username dan Production Key',
+        '5. (Webhook Secret tidak diperlukan — dikosongkan)',
+      ],
       webhookPath: 'functions/v1/digiflazz-webhook',
     },
   },

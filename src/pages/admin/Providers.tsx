@@ -33,9 +33,8 @@ const providers: ProviderDef[] = [
     canTest: true,
     docsUrl: 'https://developer.digiflazz.com',
     fields: [
-      { key: 'digiflazz_username', label: 'Username Digiflazz', placeholder: 'username akun Digiflazz' },
-      { key: 'digiflazz_api_key', label: 'API Key (Development/Production)', placeholder: 'API Key dari Digiflazz', type: 'password' },
-      { key: 'digiflazz_webhook_secret', label: 'Webhook Secret', placeholder: 'Secret key untuk verifikasi callback', type: 'password' },
+      { key: 'digiflazz_username', label: 'Username Digiflazz', placeholder: 'Username akun digiflazz.com' },
+      { key: 'digiflazz_api_key', label: 'Production API Key', placeholder: 'Production API Key dari dashboard Digiflazz', type: 'password' },
     ],
   },
   {
