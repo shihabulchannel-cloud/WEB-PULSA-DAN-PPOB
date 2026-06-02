@@ -3563,6 +3563,7 @@ export type Database = {
           markup_amount: number | null
           modal_price: number | null
           name: string
+          provider: string | null
           sell_price: number | null
           seller_product_status: boolean | null
           sku: string | null
@@ -3585,6 +3586,7 @@ export type Database = {
           markup_amount?: number | null
           modal_price?: number | null
           name: string
+          provider?: string | null
           sell_price?: number | null
           seller_product_status?: boolean | null
           sku?: string | null
@@ -3607,6 +3609,7 @@ export type Database = {
           markup_amount?: number | null
           modal_price?: number | null
           name?: string
+          provider?: string | null
           sell_price?: number | null
           seller_product_status?: boolean | null
           sku?: string | null
@@ -3879,39 +3882,6 @@ export type Database = {
   realtime: {
     Tables: {
       messages: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2026_05_29: {
         Row: {
           event: string | null
           extension: string

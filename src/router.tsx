@@ -27,6 +27,8 @@ import AdminPaymentMethods from "./pages/admin/PaymentMethods";
 import AdminDigiflazz from "./pages/admin/Digiflazz";
 import AdminCMS from "./pages/admin/CMS";
 import AdminSystemLogs from "./pages/admin/SystemLogs";
+import AdminSystemHealth from "./pages/admin/SystemHealth";
+import AdminProviders from "./pages/admin/Providers";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export const routers = [
@@ -64,8 +66,10 @@ export const routers = [
   { path: "/admin/notifications", name: "admin-notifications", element: <ProtectedRoute><AdminNotifications /></ProtectedRoute> },
   { path: "/admin/api-logs", name: "admin-api-logs", element: <ProtectedRoute><AdminApiLogs /></ProtectedRoute> },
   { path: "/admin/digiflazz", name: "admin-digiflazz", element: <ProtectedRoute><AdminDigiflazz /></ProtectedRoute> },
+  { path: "/admin/providers", name: "admin-providers", element: <ProtectedRoute><AdminProviders /></ProtectedRoute> },
   { path: "/admin/cms", name: "admin-cms", element: <ProtectedRoute><AdminCMS /></ProtectedRoute> },
   { path: "/admin/logs", name: "admin-logs", element: <ProtectedRoute><AdminSystemLogs /></ProtectedRoute> },
+  { path: "/admin/health", name: "admin-health", element: <ProtectedRoute><AdminSystemHealth /></ProtectedRoute> },
   { path: "/admin/settings", name: "admin-settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
 
   // Catch all

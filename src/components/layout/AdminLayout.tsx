@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Settings, BarChart3,
   FileText, Bell, ChevronLeft, ChevronRight,
   Zap, LogOut, Tag, Image, HelpCircle, Star, Menu, X,
-  Wifi, FileCode, Activity, Database, PenSquare
+  Wifi, FileCode, Activity, Database, PenSquare, Server
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +28,7 @@ const navGroups: NavGroup[] = [
     group: 'LAYANAN',
     items: [
       { label: 'Digiflazz', href: '/admin/digiflazz', icon: Wifi },
+      { label: 'Provider', href: '/admin/providers', icon: Server },
       { label: 'Pembayaran', href: '/admin/payment-methods', icon: Database },
     ],
   },
@@ -45,6 +46,7 @@ const navGroups: NavGroup[] = [
     group: 'LAPORAN & LOG',
     items: [
       { label: 'Laporan', href: '/admin/reports', icon: BarChart3 },
+      { label: 'System Health', href: '/admin/health', icon: Activity },
       { label: 'Log Sistem', href: '/admin/logs', icon: Activity },
       { label: 'Notifikasi', href: '/admin/notifications', icon: Bell },
     ],

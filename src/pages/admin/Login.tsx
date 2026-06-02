@@ -44,7 +44,7 @@ export default function AdminLogin() {
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow animate-float">
             <Zap className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-gradient">SHIELACOM CELL</h1>
+          <h1 className="text-2xl font-bold text-accent-light">SHIELACOM CELL</h1>
           <p className="text-primary-foreground/50 text-sm mt-1">Admin Panel</p>
         </div>
 

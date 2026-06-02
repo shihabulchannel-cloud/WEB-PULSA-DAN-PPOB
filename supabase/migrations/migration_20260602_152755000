@@ -1,0 +1,22 @@
+-- Add provider column to products if not exists
+ALTER TABLE products ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'digiflazz';
+
+-- Settings for multi-provider (VIP-Reseller)
+INSERT INTO settings (key, value) VALUES
+  ('vip_reseller_username', ''),
+  ('vip_reseller_api_key', ''),
+  ('vip_reseller_mode', 'sandbox'),
+  ('default_markup', '500'),
+  ('provider_priority_pulsa', 'digiflazz'),
+  ('provider_priority_game', 'digiflazz'),
+  ('provider_priority_data', 'digiflazz'),
+  ('provider_priority_ewallet', 'digiflazz'),
+  ('provider_priority_ppob', 'digiflazz'),
+  ('google_analytics_id', ''),
+  ('facebook_pixel_id', '')
+ON CONFLICT (key) DO NOTHING;
+
+-- Update settings with missing Duitku fields
+INSERT INTO settings (key, value) VALUES
+  ('duitku_return_url', '')
+ON CONFLICT (key) DO NOTHING;

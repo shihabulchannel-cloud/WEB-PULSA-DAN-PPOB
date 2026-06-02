@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { crypto as stdCrypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,6 @@ const corsHeaders = {
 };
 
 async function getMD5(text: string): Promise<string> {
-  const { crypto: stdCrypto } = await import("https://deno.land/std@0.208.0/crypto/mod.ts");
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
   const hashBuffer = await stdCrypto.subtle.digest("MD5", data);
@@ -23,46 +23,90 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const { data: settingsRows } = await supabase.from("settings").select("key, value");
+    const cfg = Object.fromEntries((settingsRows || []).map((s: { key: string; value: string }) => [s.key, s.value]));
 
-    const { data: settings } = await supabase.from("settings").select("key, value");
-    const cfg = Object.fromEntries((settings || []).map((s: { key: string; value: string }) => [s.key, s.value]));
+    // TRIM all credentials to remove accidental whitespace
+    const username = (cfg.digiflazz_username || "").trim();
+    const apiKey = (cfg.digiflazz_api_key || "").trim();
 
-    const username = cfg.digiflazz_username || Deno.env.get("digiflazz_username") || "";
-    const apiKey = cfg.digiflazz_api_key || Deno.env.get("digiflazz_api_key") || "";
+    // Debug info
+    const debugInfo = {
+      username_found: !!username,
+      username_length: username.length,
+      apikey_found: !!apiKey,
+      apikey_length: apiKey.length,
+      apikey_prefix: apiKey ? apiKey.substring(0, 4) + "..." : "N/A",
+    };
 
     if (!username || !apiKey) {
-      return new Response(JSON.stringify({ success: false, message: "Username dan API Key Digiflazz belum dikonfigurasi" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({
+        success: false,
+        message: "Username dan API Key Digiflazz belum dikonfigurasi. Isi di Pengaturan → Digiflazz.",
+        debug: debugInfo,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const sign = await getMD5(username + apiKey + "depo");
+    // Digiflazz cek-saldo signature: MD5(username + apiKey + "depo")
+    const signStr = username + apiKey + "depo";
+    const sign = await getMD5(signStr);
 
+    console.log(`[digiflazz-test] username=${username}, apikey_len=${apiKey.length}, sign=${sign}`);
+
+    const startTime = Date.now();
     const res = await fetch("https://api.digiflazz.com/v1/cek-saldo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cmd: "deposit", username, sign }),
     });
 
-    const result = await res.json();
+    const duration = Date.now() - startTime;
+    const rawText = await res.text();
+    let result: Record<string, unknown> = {};
+    try { result = JSON.parse(rawText); } catch { result = { raw: rawText }; }
 
-    if (result.data) {
+    console.log(`[digiflazz-test] http=${res.status} duration=${duration}ms response=${rawText.substring(0, 500)}`);
+
+    // Log to api_logs
+    await supabase.from("api_logs").insert({
+      service: "digiflazz",
+      endpoint: "/v1/cek-saldo",
+      request_data: { cmd: "deposit", username, sign_preview: sign.substring(0, 8) + "..." },
+      response_data: result,
+      status_code: res.status,
+      is_success: !!(result as { data?: unknown }).data,
+      duration_ms: duration,
+    }).catch(() => {});
+
+    if ((result as { data?: { deposit?: number } }).data) {
+      const balance = (result as { data: { deposit: number } }).data.deposit;
       return new Response(JSON.stringify({
         success: true,
-        balance: result.data.deposit,
-        message: `Koneksi berhasil! Saldo: Rp ${Number(result.data.deposit).toLocaleString('id-ID')}`,
+        balance,
+        message: `Koneksi berhasil! Saldo Digiflazz: Rp ${Number(balance).toLocaleString("id-ID")}`,
+        debug: debugInfo,
+        response: result,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Show actual Digiflazz error message
+    const errMsg = (result as { rc?: string; rd?: string; message?: string }).rd
+      || (result as { message?: string }).message
+      || "Koneksi gagal";
+
     return new Response(JSON.stringify({
       success: false,
-      message: result.message || "Koneksi gagal — periksa username dan API key",
+      message: `Digiflazz: ${errMsg}`,
+      http_status: res.status,
+      debug: debugInfo,
+      response: result,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
-    console.error("digiflazz-test-connection error:", err);
-    return new Response(JSON.stringify({ success: false, message: "Gagal menghubungi server Digiflazz" }), { status: 500, headers: corsHeaders });
+    console.error("[digiflazz-test] error:", err);
+    return new Response(JSON.stringify({
+      success: false,
+      message: `Error: ${err instanceof Error ? err.message : String(err)}`,
+    }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

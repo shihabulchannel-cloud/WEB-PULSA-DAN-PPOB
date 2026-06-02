@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Zap, Phone, Mail, Instagram, Facebook, Twitter, MessageCircle, Shield, Clock, Headphones } from 'lucide-react';
+import { Zap, Phone, Mail, Instagram, Facebook, Twitter, MessageCircle, Shield, Clock, Headphones, Send } from 'lucide-react';
 import { useSetting } from '@/hooks/useSettings';
+
+// Handle both full URL and @username format
+function buildSocialUrl(value: string, baseUrl: string): string {
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `${baseUrl}/${value.replace('@', '').replace(/^\//, '')}`;
+}
 
 export default function Footer() {
   const siteName = useSetting('site_name', 'SHIELACOM CELL');
@@ -8,6 +15,26 @@ export default function Footer() {
   const whatsapp = useSetting('contact_whatsapp', '');
   const email = useSetting('contact_email', '');
   const instagram = useSetting('contact_instagram', '');
+  const facebook = useSetting('contact_facebook', '');
+  const tiktok = useSetting('contact_tiktok', '');
+  const twitter = useSetting('contact_twitter', '');
+  const telegram = useSetting('contact_telegram', '');
+
+  const igUrl = buildSocialUrl(instagram, 'https://instagram.com');
+  const fbUrl = buildSocialUrl(facebook, 'https://facebook.com');
+  const tiktokUrl = buildSocialUrl(tiktok, 'https://tiktok.com/@');
+  const twitterUrl = buildSocialUrl(twitter, 'https://twitter.com');
+  const telegramUrl = telegram
+    ? (telegram.startsWith('http') ? telegram : `https://t.me/${telegram.replace('@', '')}`)
+    : '';
+
+  const socialLinks = [
+    { url: igUrl, icon: Instagram, label: 'Instagram' },
+    { url: fbUrl, icon: Facebook, label: 'Facebook' },
+    { url: twitterUrl, icon: Twitter, label: 'Twitter/X' },
+    { url: telegramUrl, icon: Send, label: 'Telegram' },
+    { url: whatsapp ? `https://wa.me/${whatsapp}` : '', icon: MessageCircle, label: 'WhatsApp' },
+  ].filter(s => !!s.url);
 
   return (
     <footer className="gradient-dark text-primary-foreground">
@@ -52,30 +79,26 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-sm text-primary-foreground/60 mb-5 leading-relaxed">{slogan}</p>
-            <div className="flex gap-3">
-              {instagram && (
-                <a href={`https://instagram.com/${instagram.replace('@', '')}`} target="_blank" rel="noreferrer"
-                  className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
-                  <Instagram className="w-4 h-4" />
-                </a>
-              )}
-              <a href="#" className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
-                <Twitter className="w-4 h-4" />
-              </a>
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {socialLinks.map(({ url, icon: Icon, label }) => (
+                  <a key={label} href={url} target="_blank" rel="noreferrer" title={label}
+                    className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
+                    <Icon className="w-4 h-4" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Produk */}
           <div>
-            <h4 className="font-bold text-sm mb-4 text-primary-glow">Produk</h4>
+            <h4 className="font-bold text-sm mb-4 text-accent-light">Produk</h4>
             <ul className="space-y-2.5 text-sm text-primary-foreground/60">
               {['Top Up Game', 'Pulsa', 'Paket Data', 'E-Wallet', 'PPOB', 'Voucher Digital'].map(item => (
                 <li key={item}>
                   <Link to={`/category/${item.toLowerCase().replace(/ /g, '-')}`}
-                    className="hover:text-primary-glow transition-colors">
+                    className="hover:text-accent-light transition-colors">
                     {item}
                   </Link>
                 </li>
@@ -85,18 +108,19 @@ export default function Footer() {
 
           {/* Informasi */}
           <div>
-            <h4 className="font-bold text-sm mb-4 text-primary-glow">Informasi</h4>
+            <h4 className="font-bold text-sm mb-4 text-accent-light">Informasi</h4>
             <ul className="space-y-2.5 text-sm text-primary-foreground/60">
               {[
                 { label: 'Tentang Kami', href: '/about' },
                 { label: 'Cara Pembelian', href: '/how-to-buy' },
                 { label: 'FAQ', href: '/faq' },
-                { label: 'Blog', href: '/blog' },
+                { label: 'Promo', href: '/promo' },
+                { label: 'Reseller', href: '/reseller' },
                 { label: 'Kebijakan Privasi', href: '/privacy' },
                 { label: 'Syarat & Ketentuan', href: '/terms' },
               ].map(item => (
                 <li key={item.label}>
-                  <Link to={item.href} className="hover:text-primary-glow transition-colors">
+                  <Link to={item.href} className="hover:text-accent-light transition-colors">
                     {item.label}
                   </Link>
                 </li>
@@ -106,32 +130,40 @@ export default function Footer() {
 
           {/* Kontak */}
           <div>
-            <h4 className="font-bold text-sm mb-4 text-primary-glow">Hubungi Kami</h4>
+            <h4 className="font-bold text-sm mb-4 text-accent-light">Hubungi Kami</h4>
             <ul className="space-y-3 text-sm text-primary-foreground/60">
               {whatsapp && (
                 <li>
                   <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-2 hover:text-primary-glow transition-colors">
+                    className="flex items-center gap-2 hover:text-accent-light transition-colors">
                     <MessageCircle className="w-4 h-4 text-green-400" />
                     <span>+{whatsapp}</span>
                   </a>
                 </li>
               )}
+              {telegramUrl && (
+                <li>
+                  <a href={telegramUrl} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-2 hover:text-accent-light transition-colors">
+                    <Send className="w-4 h-4 text-blue-400" />
+                    <span>{telegram}</span>
+                  </a>
+                </li>
+              )}
               {email && (
                 <li>
-                  <a href={`mailto:${email}`} className="flex items-center gap-2 hover:text-primary-glow transition-colors">
-                    <Mail className="w-4 h-4 text-primary-glow" />
+                  <a href={`mailto:${email}`} className="flex items-center gap-2 hover:text-accent-light transition-colors">
+                    <Mail className="w-4 h-4 text-accent-light" />
                     <span>{email}</span>
                   </a>
                 </li>
               )}
               <li className="flex items-start gap-2">
-                <Phone className="w-4 h-4 text-primary-glow mt-0.5 flex-shrink-0" />
+                <Phone className="w-4 h-4 text-accent-light mt-0.5 flex-shrink-0" />
                 <span>Layanan 24 Jam, 7 Hari Seminggu</span>
               </li>
             </ul>
 
-            {/* Payment Methods */}
             <div className="mt-5">
               <p className="text-xs text-primary-foreground/40 mb-2 font-medium">Metode Pembayaran</p>
               <div className="flex flex-wrap gap-1.5">

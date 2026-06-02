@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { crypto as stdCrypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +7,6 @@ const corsHeaders = {
 };
 
 async function getMD5(text: string): Promise<string> {
-  const { crypto: stdCrypto } = await import("https://deno.land/std@0.208.0/crypto/mod.ts");
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
   const hashBuffer = await stdCrypto.subtle.digest("MD5", data);
@@ -23,49 +23,56 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-
+    // NO auth required — customers are anonymous
     const body = await req.json();
-    const { transactionId, amount, customerName, customerEmail, customerPhone, productName, returnUrl, callbackUrl } = body;
+    const { invoiceNo, amount, customerName, customerEmail, customerPhone, productName, returnUrl } = body;
 
-    if (!transactionId || !amount) {
-      return new Response(JSON.stringify({ error: "transactionId and amount are required" }), { status: 400, headers: corsHeaders });
+    if (!invoiceNo || !amount) {
+      return new Response(JSON.stringify({ error: "invoiceNo and amount are required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // Verify invoice exists
+    const { data: tx } = await supabase.from("transactions").select("id, payment_status").eq("invoice_no", invoiceNo).maybeSingle();
+    if (!tx) {
+      return new Response(JSON.stringify({ error: "Invoice tidak ditemukan" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // Get Duitku settings
     const { data: settings } = await supabase.from("settings").select("key, value");
     const cfg = Object.fromEntries((settings || []).map((s: { key: string; value: string }) => [s.key, s.value]));
 
-    const merchantCode = cfg.duitku_merchant_code || Deno.env.get("duitku_merchant_code") || "";
-    const apiKey = cfg.duitku_api_key || Deno.env.get("duitku_api_key") || "";
-    const mode = cfg.duitku_mode || "sandbox";
+    const merchantCode = (cfg.duitku_merchant_code || "").trim();
+    const apiKey = (cfg.duitku_api_key || "").trim();
+    const mode = (cfg.duitku_mode || "sandbox").trim();
 
     if (!merchantCode || !apiKey) {
-      return new Response(JSON.stringify({ error: "Duitku not configured" }), { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Duitku belum dikonfigurasi. Isi di Pengaturan → Duitku Payment." }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     const baseUrl = mode === "production"
       ? "https://passport.duitku.com/webapi/api"
       : "https://sandbox.duitku.com/webapi/api";
 
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const signature = await getMD5(merchantCode + amount + transactionId + apiKey);
+    const signature = await getMD5(merchantCode + amount + invoiceNo + apiKey);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 
     const payload = {
       merchantCode,
       paymentAmount: amount,
-      merchantOrderId: transactionId,
+      merchantOrderId: invoiceNo,
       productDetails: productName || "Digital Product",
       email: customerEmail || "",
       phoneNumber: customerPhone || "",
       additionalParam: "",
       merchantUserInfo: customerName || "",
       customerVaName: customerName || "Customer",
-      callbackUrl: callbackUrl || `${Deno.env.get("SUPABASE_URL")}/functions/v1/duitku-webhook`,
+      callbackUrl: `${supabaseUrl}/functions/v1/duitku-webhook`,
       returnUrl: returnUrl || cfg.site_url || "",
       signature,
       expiryPeriod: 60,
@@ -78,17 +85,20 @@ Deno.serve(async (req) => {
     });
 
     const result = await response.json();
+    console.log("[duitku-create-payment] response:", JSON.stringify(result));
 
     if (result.statusCode !== "00") {
-      console.error("Duitku error:", result);
-      return new Response(JSON.stringify({ error: result.statusMessage || "Payment creation failed" }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({
+        error: result.statusMessage || "Payment creation failed",
+        detail: result,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Update transaction with payment reference
     await supabase.from("transactions").update({
       payment_reference: result.reference,
       payment_url: result.paymentUrl,
-    }).eq("invoice_no", transactionId);
+    }).eq("invoice_no", invoiceNo);
 
     return new Response(JSON.stringify({
       success: true,
@@ -98,7 +108,9 @@ Deno.serve(async (req) => {
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {
-    console.error("duitku-create-payment error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: corsHeaders });
+    console.error("[duitku-create-payment] error:", err);
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
 });

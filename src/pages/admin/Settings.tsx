@@ -34,6 +34,8 @@ const sections = [
       { key: 'meta_title', label: 'Meta Title', placeholder: 'SHIELACOM CELL — Top Up Game & PPOB Termurah' },
       { key: 'meta_description', label: 'Meta Description', placeholder: 'Platform top up digital terpercaya...' },
       { key: 'meta_keywords', label: 'Keywords (pisah koma)', placeholder: 'top up game, pulsa murah, ppob' },
+      { key: 'google_analytics_id', label: 'Google Analytics ID', placeholder: 'G-XXXXXXXXXX atau UA-XXXXXXX' },
+      { key: 'facebook_pixel_id', label: 'Facebook Pixel ID', placeholder: '123456789012345' },
     ],
     info: null,
   },

@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Product {
   id: string; name: string; brand: string; sell_price: number; modal_price: number;
-  description: string; image_url: string;
+  description: string; image_url: string; digiflazz_sku: string | null;
   categories?: { name: string; slug: string };
 }
 interface PaymentMethod {
@@ -79,11 +79,13 @@ export default function ProductPage() {
     try {
       const invoiceNo = generateInvoiceNo();
       const fee = calculateFee(selectedPayment);
+
+      // Insert transaction first
       const { data, error } = await supabase.from('transactions').insert({
         invoice_no: invoiceNo,
         product_id: product.id,
         product_name: product.name,
-        product_sku: id,
+        product_sku: product.digiflazz_sku || '',
         category_name: (product.categories as { name: string })?.name || '',
         customer_name: customerName || null,
         customer_email: customerEmail || null,
@@ -104,31 +106,35 @@ export default function ProductPage() {
 
       if (error) throw error;
 
-      // Try to create Tripay payment
+      // Create Duitku payment
       try {
-        const { data: paymentData } = await supabase.functions.invoke('tripay-create-payment', {
+        const { data: paymentData, error: payErr } = await supabase.functions.invoke('duitku-create-payment', {
           body: {
-            transaction_id: data.id,
-            invoice_no: invoiceNo,
+            invoiceNo,
             amount: total,
-            payment_code: selectedPayment.code,
-            customer_name: customerName || 'Customer',
-            customer_email: customerEmail || '',
-            customer_phone: customerPhone || '',
-            product_name: product.name,
+            customerName: customerName || 'Customer',
+            customerEmail: customerEmail || '',
+            customerPhone: customerPhone || '',
+            productName: product.name,
+            returnUrl: `${window.location.origin}/transaction/${invoiceNo}`,
           }
         });
-        if (paymentData?.payment_url) {
-          await supabase.from('transactions').update({ payment_url: paymentData.payment_url, payment_reference: paymentData.reference }).eq('id', data.id);
-          window.location.href = paymentData.payment_url;
+
+        if (!payErr && paymentData?.paymentUrl) {
+          window.location.href = paymentData.paymentUrl;
           return;
         }
-      } catch {
-        // Fallback to transaction page if Tripay not configured
+
+        // If Duitku not configured, show info and go to transaction page
+        console.log('Payment gateway not configured, redirecting to transaction page');
+      } catch (payErr) {
+        console.log('Payment creation error:', payErr);
       }
 
+      // Fallback: redirect to transaction page (manual payment)
       navigate(`/transaction/${invoiceNo}`);
     } catch (err) {
+      console.error('Order error:', err);
       toast({ title: 'Gagal membuat transaksi', description: 'Silakan coba lagi', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -187,7 +193,6 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* Trust badges */}
               <div className="bg-green-50 border border-green-100 rounded-xl p-4 space-y-2">
                 {[
                   { icon: Zap, text: 'Proses otomatis & instan' },
@@ -207,19 +212,18 @@ export default function ProductPage() {
 
             {/* Right: Order Form */}
             <div className="lg:col-span-3 space-y-5">
-              {/* Target ID */}
               <div className="bg-card rounded-2xl border border-border shadow-card p-5">
                 <h3 className="font-semibold text-foreground mb-4">Isi Data Pesanan</h3>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="targetId" className="text-sm font-medium">
-                      {product.categories && (product.categories as { name: string }).name?.toLowerCase().includes('game')
+                      {(product.categories as { name: string })?.name?.toLowerCase().includes('game')
                         ? 'User ID Game / Server ID'
                         : 'Nomor Tujuan'}
                     </Label>
                     <Input
                       id="targetId"
-                      placeholder={product.categories && (product.categories as { name: string }).name?.toLowerCase().includes('game') ? 'Masukkan User ID' : 'Masukkan nomor tujuan'}
+                      placeholder={(product.categories as { name: string })?.name?.toLowerCase().includes('game') ? 'Masukkan User ID' : 'Masukkan nomor tujuan'}
                       value={targetId}
                       onChange={e => setTargetId(e.target.value)}
                       className="mt-1.5"
@@ -242,36 +246,38 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              {/* Payment Methods */}
               <div className="bg-card rounded-2xl border border-border shadow-card p-5">
                 <h3 className="font-semibold text-foreground mb-4">Pilih Metode Pembayaran</h3>
-                <div className="space-y-4">
-                  {Object.entries(paymentGroups).map(([type, methods]) => (
-                    <div key={type}>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{paymentTypeLabels[type] || type}</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {methods.map(pm => {
-                          const fee = calculateFee(pm);
-                          return (
-                            <button
-                              key={pm.id}
-                              onClick={() => setSelectedPayment(pm)}
-                              className={`p-3 rounded-xl border text-left transition-all ${selectedPayment?.id === pm.id ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border hover:border-primary/40'}`}
-                            >
-                              <p className="text-sm font-medium text-foreground">{pm.name}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {fee === 0 ? 'Gratis' : `+${formatCurrency(fee)}`}
-                              </p>
-                            </button>
-                          );
-                        })}
+                {Object.keys(paymentGroups).length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Belum ada metode pembayaran tersedia</p>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(paymentGroups).map(([type, methods]) => (
+                      <div key={type}>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{paymentTypeLabels[type] || type}</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {methods.map(pm => {
+                            const fee = calculateFee(pm);
+                            return (
+                              <button
+                                key={pm.id}
+                                onClick={() => setSelectedPayment(pm)}
+                                className={`p-3 rounded-xl border text-left transition-all ${selectedPayment?.id === pm.id ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border hover:border-primary/40'}`}
+                              >
+                                <p className="text-sm font-medium text-foreground">{pm.name}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {fee === 0 ? 'Gratis' : `+${formatCurrency(fee)}`}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Summary & Pay */}
               <div className="bg-card rounded-2xl border border-border shadow-card p-5">
                 <h3 className="font-semibold text-foreground mb-3">Ringkasan Pembayaran</h3>
                 <div className="space-y-2 text-sm">

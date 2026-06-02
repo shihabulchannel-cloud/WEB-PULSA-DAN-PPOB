@@ -8,13 +8,16 @@ import {
 } from 'recharts';
 import {
   TrendingUp, ShoppingCart, DollarSign, Package, RefreshCw,
-  PackageX, Banknote, ArrowUpRight, Calendar, Activity
+  PackageX, Banknote, ArrowUpRight, Calendar, Activity,
+  Wifi, WifiOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils-app';
 import { format, subDays, startOfMonth, subMonths } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSettings } from '@/hooks/useSettings';
+import { Link } from 'react-router-dom';
 
 const CHART_GREEN = '#0e8a4a';
 const CHART_ACCENT = '#1cc96b';
@@ -31,6 +34,10 @@ export default function AdminDashboard() {
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = startOfMonth(new Date()).toISOString();
+  const { data: settings = {} } = useSettings();
+
+  const digiConfigured = !!(settings.digiflazz_username?.trim() && settings.digiflazz_api_key?.trim());
+  const duitkuConfigured = !!(settings.duitku_merchant_code?.trim() && settings.duitku_api_key?.trim());
 
   /* ── Stats ── */
   const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
@@ -175,6 +182,25 @@ export default function AdminDashboard() {
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-slow" />
               <span>Live</span>
             </div>
+          </div>
+        </div>
+
+        {/* Provider Status Strip */}
+        <div className="flex flex-wrap items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-card">
+          <span className="text-xs font-semibold text-muted-foreground mr-1">STATUS:</span>
+          <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${digiConfigured ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+            {digiConfigured ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            <span>Digiflazz</span>
+          </div>
+          <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${duitkuConfigured ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+            {duitkuConfigured ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            <span>Duitku</span>
+          </div>
+          <div className="ml-auto">
+            <Link to="/admin/health" className="text-xs text-primary hover:underline flex items-center gap-1">
+              <Activity className="w-3 h-3" />
+              System Health
+            </Link>
           </div>
         </div>
 

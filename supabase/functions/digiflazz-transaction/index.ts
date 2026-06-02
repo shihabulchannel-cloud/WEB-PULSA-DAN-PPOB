@@ -26,57 +26,63 @@ Deno.serve(async (req) => {
     const { transaction_id } = await req.json();
     if (!transaction_id) throw new Error("transaction_id required");
 
-    // Get transaction
     const { data: tx, error: txError } = await supabase
       .from("transactions")
-      .select("*, products(buyer_sku_code)")
+      .select("*, products(buyer_sku_code, digiflazz_sku)")
       .eq("id", transaction_id)
       .maybeSingle();
 
-    if (txError || !tx) throw new Error("Transaction not found");
+    if (txError || !tx) throw new Error(`Transaction not found: ${transaction_id}`);
 
-    // IDEMPOTENCY: If already submitted to Digiflazz (success or processing), skip
     if (tx.digiflazz_submitted_at && (tx.status === "success" || tx.status === "processing")) {
-      console.log(`Transaction ${transaction_id} already submitted at ${tx.digiflazz_submitted_at}, skipping.`);
-      return new Response(
-        JSON.stringify({ success: true, status: tx.status, skipped: true, reason: "Already submitted" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.log(`[digiflazz-trx] Already submitted: ${transaction_id}`);
+      return new Response(JSON.stringify({ success: true, status: tx.status, skipped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    // Get Digiflazz credentials
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("key, value")
+    const { data: settings } = await supabase.from("settings").select("key, value")
       .in("key", ["digiflazz_username", "digiflazz_api_key"]);
-
     const settingsMap = Object.fromEntries((settings || []).map((s: { key: string; value: string }) => [s.key, s.value]));
-    const username = settingsMap["digiflazz_username"];
-    const apiKey = settingsMap["digiflazz_api_key"];
+
+    // TRIM credentials to prevent signature mismatch
+    const username = (settingsMap["digiflazz_username"] || "").trim();
+    const apiKey = (settingsMap["digiflazz_api_key"] || "").trim();
+
+    console.log(`[digiflazz-trx] username=${username}, apikey_len=${apiKey.length}`);
 
     if (!username || !apiKey) {
       await supabase.from("transactions").update({
         status: "failed",
-        digiflazz_message: "Konfigurasi Digiflazz belum diatur",
+        digiflazz_message: "Konfigurasi Digiflazz belum diatur di Pengaturan",
       }).eq("id", transaction_id);
       throw new Error("Digiflazz credentials not configured");
     }
 
     const refId = `TRX-${Date.now()}-${transaction_id.slice(0, 8)}`;
-    const buyerSkuCode = (tx.products as { buyer_sku_code: string })?.buyer_sku_code || tx.product_sku;
+    const prod = tx.products as { buyer_sku_code: string; digiflazz_sku: string } | null;
+    const buyerSkuCode = prod?.buyer_sku_code || prod?.digiflazz_sku || tx.product_sku;
 
-    // Create correct MD5 signature
-    const signStr = `${username}${apiKey}${refId}`;
+    if (!buyerSkuCode) {
+      await supabase.from("transactions").update({
+        status: "failed",
+        digiflazz_message: "SKU produk tidak ditemukan",
+      }).eq("id", transaction_id);
+      throw new Error("Product SKU not found");
+    }
+
+    // Signature: MD5(username + apiKey + refId) per Digiflazz docs
+    const signStr = username + apiKey + refId;
     const sign = await createMD5(signStr);
+    console.log(`[digiflazz-trx] refId=${refId}, sku=${buyerSkuCode}, sign=${sign.substring(0, 8)}...`);
 
-    // Mark as submitted BEFORE sending to prevent double execution
+    // Mark as submitted
     await supabase.from("transactions").update({
       digiflazz_submitted_at: new Date().toISOString(),
       digiflazz_ref: refId,
       status: "processing",
     }).eq("id", transaction_id);
 
-    // Send transaction to Digiflazz
     const startTime = Date.now();
     const response = await fetch("https://api.digiflazz.com/v1/transaction", {
       method: "POST",
@@ -92,8 +98,8 @@ Deno.serve(async (req) => {
 
     const result = await response.json();
     const duration = Date.now() - startTime;
+    console.log(`[digiflazz-trx] response: ${JSON.stringify(result).substring(0, 500)}`);
 
-    // Log API call
     await supabase.from("api_logs").insert({
       service: "digiflazz",
       endpoint: "/v1/transaction",
@@ -109,7 +115,6 @@ Deno.serve(async (req) => {
     if (digiStatus === "Sukses") newStatus = "success";
     else if (digiStatus === "Gagal") newStatus = "failed";
 
-    // Update transaction
     await supabase.from("transactions").update({
       digiflazz_status: newStatus,
       digiflazz_message: result?.data?.message,
@@ -117,25 +122,20 @@ Deno.serve(async (req) => {
       status: newStatus,
     }).eq("id", transaction_id);
 
-    // Send notification if success or failed
     if (newStatus === "success" || newStatus === "failed") {
       await supabase.functions.invoke("send-notification", {
-        body: {
-          transaction_id,
-          type: newStatus === "success" ? "topup_success" : "topup_failed",
-        },
+        body: { transaction_id, type: newStatus === "success" ? "topup_success" : "topup_failed" },
       }).catch(() => {});
     }
 
-    return new Response(
-      JSON.stringify({ success: true, status: newStatus, data: result?.data }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, status: newStatus, data: result?.data }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
+
   } catch (error) {
-    console.error("Digiflazz transaction error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[digiflazz-trx] error:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
 });
