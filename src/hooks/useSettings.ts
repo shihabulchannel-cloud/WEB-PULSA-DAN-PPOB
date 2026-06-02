@@ -8,10 +8,16 @@ export const useSettings = () => {
     queryKey: ['settings'],
     queryFn: async () => {
       const { data, error } = await supabase.from('settings').select('key, value');
-      if (error) throw error;
+      if (error) {
+        // Convert Supabase error object to proper Error to avoid [object Object] logs
+        throw new Error(error.message || 'Failed to load settings');
+      }
       return Object.fromEntries((data || []).map(s => [s.key, s.value || '']));
     },
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+    // Return empty settings on error instead of crashing components
+    placeholderData: {},
   });
 };
 
