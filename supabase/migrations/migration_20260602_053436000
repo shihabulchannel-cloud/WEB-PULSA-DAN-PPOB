@@ -1,0 +1,16 @@
+-- CMS, SEO, Social Media settings keys
+INSERT INTO settings (key, value) VALUES
+  ('cms_about', '<h2>Tentang SHIELACOM CELL</h2><p>SHIELACOM CELL adalah platform top up digital dan PPOB terpercaya yang menyediakan berbagai produk digital dengan harga kompetitif.</p><p>Kami hadir untuk memudahkan kebutuhan digital Anda, mulai dari top up game, pulsa, paket data, e-wallet, hingga pembayaran tagihan.</p>'),
+  ('cms_how_to_buy', '<h2>Cara Bertransaksi</h2><h3>1. Pilih Produk</h3><p>Cari dan pilih produk yang ingin Anda beli dari halaman kategori atau gunakan fitur pencarian.</p><h3>2. Isi Data</h3><p>Masukkan ID/nomor tujuan, nama, email, dan nomor telepon untuk konfirmasi.</p><h3>3. Pilih Pembayaran</h3><p>Pilih metode pembayaran yang tersedia: QRIS, Transfer Bank, atau E-Wallet.</p><h3>4. Selesaikan Pembayaran</h3><p>Lakukan pembayaran sesuai instruksi. Produk akan langsung dikirim otomatis setelah pembayaran dikonfirmasi.</p>'),
+  ('cms_privacy', '<h2>Kebijakan Privasi</h2><p>Kami berkomitmen untuk melindungi privasi dan keamanan data pengguna. Data yang Anda berikan hanya digunakan untuk keperluan transaksi.</p><h3>Data yang Dikumpulkan</h3><ul><li>Nama dan kontak untuk notifikasi transaksi</li><li>ID/nomor tujuan untuk pengiriman produk</li><li>Data pembayaran diproses melalui gateway terenkripsi</li></ul>'),
+  ('cms_terms', '<h2>Syarat & Ketentuan</h2><p>Dengan menggunakan layanan ini, Anda menyetujui syarat dan ketentuan berikut.</p><h3>Ketentuan Transaksi</h3><ul><li>Pastikan data yang dimasukkan sudah benar sebelum membayar</li><li>Transaksi yang sudah dibayar tidak dapat dibatalkan</li><li>Hubungi CS jika transaksi mengalami kendala</li></ul>'),
+  ('site_logo_url', ''),
+  ('site_favicon_url', ''),
+  ('contact_telegram', ''),
+  ('contact_facebook', ''),
+  ('contact_tiktok', ''),
+  ('contact_twitter', ''),
+  ('meta_title', 'SHIELACOM CELL — Top Up Game, Pulsa & PPOB Termurah'),
+  ('meta_description', 'Platform top up digital terpercaya. Top Up Game, Pulsa, Paket Data, E-Wallet, PPOB dengan harga termurah dan proses instan.'),
+  ('meta_keywords', 'top up game, pulsa murah, paket data, e-wallet, token pln, ppob')
+ON CONFLICT (key) DO NOTHING;

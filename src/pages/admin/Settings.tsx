@@ -5,7 +5,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Settings as SettingsIcon, Globe, CreditCard, Mail, MessageCircle, Zap } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Globe, CreditCard, Mail, MessageCircle, Zap, Palette, Search, Share2 } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +21,35 @@ const sections = [
     ],
   },
   {
+    id: 'appearance', label: 'Tampilan', icon: Palette,
+    fields: [
+      { key: 'site_logo_url', label: 'URL Logo Website', placeholder: 'https://...' },
+      { key: 'site_favicon_url', label: 'URL Favicon', placeholder: 'https://.../favicon.png' },
+    ],
+    info: null,
+  },
+  {
+    id: 'seo', label: 'SEO', icon: Search,
+    fields: [
+      { key: 'meta_title', label: 'Meta Title', placeholder: 'SHIELACOM CELL — Top Up Game & PPOB Termurah' },
+      { key: 'meta_description', label: 'Meta Description', placeholder: 'Platform top up digital terpercaya...' },
+      { key: 'meta_keywords', label: 'Keywords (pisah koma)', placeholder: 'top up game, pulsa murah, ppob' },
+    ],
+    info: null,
+  },
+  {
+    id: 'social', label: 'Sosial Media', icon: Share2,
+    fields: [
+      { key: 'contact_whatsapp', label: 'WhatsApp', placeholder: '628123456789' },
+      { key: 'contact_telegram', label: 'Telegram', placeholder: '@username atau link' },
+      { key: 'contact_instagram', label: 'Instagram', placeholder: '@shielacomcell' },
+      { key: 'contact_facebook', label: 'Facebook', placeholder: 'Link Facebook Page' },
+      { key: 'contact_tiktok', label: 'TikTok', placeholder: '@shielacomcell' },
+      { key: 'contact_twitter', label: 'Twitter/X', placeholder: '@shielacomcell' },
+    ],
+    info: null,
+  },
+  {
     id: 'digiflazz', label: 'Digiflazz', icon: SettingsIcon,
     fields: [
       { key: 'digiflazz_username', label: 'Username Digiflazz', placeholder: 'username' },
@@ -31,11 +60,7 @@ const sections = [
       color: 'bg-blue-50 border-blue-200 text-blue-700',
       codeClass: 'bg-blue-100',
       title: 'Cara mendapatkan API Key Digiflazz:',
-      lines: [
-        'Login ke digiflazz.com → Pengaturan → API',
-        'Copy Username dan Production API Key',
-      ],
-      webhookKey: 'digiflazz',
+      lines: ['Login ke digiflazz.com → Pengaturan → API', 'Copy Username dan Production API Key'],
       webhookPath: 'functions/v1/digiflazz-webhook',
     },
   },
@@ -50,12 +75,7 @@ const sections = [
       color: 'bg-green-50 border-green-200 text-green-700',
       codeClass: 'bg-green-100',
       title: 'Cara mendapatkan API Duitku:',
-      lines: [
-        'Login ke my.duitku.com → Project → Pilih project Anda',
-        'Copy Merchant Code dan API Key',
-        'Set mode ke "sandbox" untuk testing, "production" untuk live',
-      ],
-      webhookKey: 'duitku',
+      lines: ['Login ke my.duitku.com → Project → Pilih project Anda', 'Copy Merchant Code dan API Key', 'Set mode ke "sandbox" untuk testing, "production" untuk live'],
       webhookPath: 'functions/v1/duitku-webhook',
     },
   },
@@ -70,11 +90,7 @@ const sections = [
       color: 'bg-purple-50 border-purple-200 text-purple-700',
       codeClass: 'bg-purple-100',
       title: 'Cara mendapatkan API VIP Payment:',
-      lines: [
-        'Login ke vipayment.id → Dashboard → API Settings',
-        'Copy Merchant ID dan Secret Key',
-      ],
-      webhookKey: 'vip',
+      lines: ['Login ke vipayment.id → Dashboard → API Settings', 'Copy Merchant ID dan Secret Key'],
       webhookPath: 'functions/v1/vip-payment-webhook',
     },
   },
@@ -87,6 +103,7 @@ const sections = [
       { key: 'smtp_pass', label: 'SMTP Password', placeholder: '••••••••', type: 'password' },
       { key: 'smtp_from', label: 'From Email', placeholder: 'SHIELACOM CELL <noreply@domain.com>' },
     ],
+    info: null,
   },
   {
     id: 'fonnte', label: 'WhatsApp (Fonnte)', icon: MessageCircle,
@@ -97,11 +114,7 @@ const sections = [
       color: 'bg-teal-50 border-teal-200 text-teal-700',
       codeClass: 'bg-teal-100',
       title: 'Cara mendapatkan Fonnte API Key:',
-      lines: [
-        'Login ke app.fonnte.com',
-        'Tambahkan device WhatsApp → Copy Token/API Key',
-      ],
-      webhookKey: null,
+      lines: ['Login ke app.fonnte.com', 'Tambahkan device WhatsApp → Copy Token/API Key'],
       webhookPath: null,
     },
   },
@@ -114,9 +127,7 @@ export default function AdminSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setValues(settings);
-  }, [settings]);
+  useEffect(() => { setValues(settings); }, [settings]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -125,16 +136,6 @@ export default function AdminSettings() {
       }));
       for (const update of updates) {
         await supabase.from('settings').upsert(update, { onConflict: 'key' });
-      }
-      const sensitiveKeys = [
-        'digiflazz_api_key', 'digiflazz_webhook_secret',
-        'duitku_api_key', 'vip_secret_key',
-        'smtp_pass', 'fonnte_api_key',
-      ];
-      const secrets: Record<string, string> = {};
-      sensitiveKeys.forEach(k => { if (values[k]) secrets[k] = values[k]; });
-      if (Object.keys(secrets).length > 0) {
-        await supabase.functions.invoke('save-settings-secrets', { body: secrets }).catch(() => {});
       }
     },
     onSuccess: () => {
@@ -149,11 +150,11 @@ export default function AdminSettings() {
 
   return (
     <AdminLayout>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 md:p-6">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Pengaturan Website</h1>
-            <p className="text-sm text-muted-foreground">Konfigurasi API, kontak, dan layanan</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">Pengaturan Website</h1>
+            <p className="text-sm text-muted-foreground">Konfigurasi API, kontak, tampilan, dan layanan</p>
           </div>
           <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2 gradient-button text-primary-foreground">
             <Save className="w-4 h-4" />
@@ -191,7 +192,7 @@ export default function AdminSettings() {
                     <div key={field.key}>
                       <Label className="text-sm">{field.label}</Label>
                       <Input
-                        type={field.type || 'text'}
+                        type={(field as { type?: string }).type || 'text'}
                         placeholder={field.placeholder}
                         value={values[field.key] || ''}
                         onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))}
@@ -201,15 +202,15 @@ export default function AdminSettings() {
                   ))}
                 </div>
 
-                {'info' in section && section.info && (
+                {section.info && (
                   <div className={`mt-5 p-4 border rounded-xl text-sm ${section.info.color}`}>
                     <p className="font-medium mb-2">{section.info.title}</p>
-                    {section.info.lines.map((line, i) => (
+                    {section.info.lines.map((line: string, i: number) => (
                       <p key={i}>{i + 1}. {line}</p>
                     ))}
                     {section.info.webhookPath && (
                       <p className="mt-1">
-                        {section.info.lines.length + 1}. Set Callback/Webhook URL ke:{' '}
+                        {section.info.lines.length + 1}. Set Callback URL ke:{' '}
                         <code className={`text-xs px-1.5 py-0.5 rounded ${section.info.codeClass}`}>
                           {`[supabase-url]/${section.info.webhookPath}`}
                         </code>
@@ -217,6 +218,13 @@ export default function AdminSettings() {
                     )}
                   </div>
                 )}
+
+                <div className="mt-5 pt-4 border-t border-border">
+                  <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2 gradient-button text-primary-foreground">
+                    <Save className="w-4 h-4" />
+                    {saveMutation.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
