@@ -5,7 +5,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Wifi, WifiOff, RefreshCw, CheckCircle2, XCircle, Zap, Server, Info } from 'lucide-react';
+import { Save, Wifi, WifiOff, RefreshCw, CheckCircle2, XCircle, Zap, Server, Info, Copy, Check } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -66,6 +66,7 @@ export default function AdminProviders() {
   const [activeProvider, setActiveProvider] = useState('digiflazz');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; debug?: Record<string, unknown> } | null>(null);
   const [testing, setTesting] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const { session } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -73,6 +74,34 @@ export default function AdminProviders() {
   useEffect(() => { setValues(settings); }, [settings]);
 
   const provider = providers.find(p => p.id === activeProvider)!;
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    toast({ title: 'Disalin!', description: 'URL berhasil disalin ke clipboard' });
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const webhookUrls = [
+    {
+      key: 'digiflazz',
+      label: 'Callback URL Digiflazz',
+      url: 'https://spb-t4n279o63etzu8pu.supabase.opentrust.net/functions/v1/digiflazz-webhook',
+      desc: 'Isi di Pengaturan → API di dashboard Digiflazz',
+    },
+    {
+      key: 'vip_reseller',
+      label: 'Callback URL VIP Reseller',
+      url: 'https://spb-t4n279o63etzu8pu.supabase.opentrust.net/functions/v1/vip-reseller-webhook',
+      desc: 'Isi di kolom "Callback URL" di akun vip-reseller.co.id',
+    },
+    {
+      key: 'duitku',
+      label: 'Callback URL Duitku',
+      url: 'https://spb-t4n279o63etzu8pu.supabase.opentrust.net/functions/v1/duitku-webhook',
+      desc: 'Isi di Pengaturan merchant Duitku',
+    },
+  ];
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -239,6 +268,34 @@ export default function AdminProviders() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Webhook / Callback URLs */}
+            <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+              <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2 text-sm">
+                <Wifi className="w-4 h-4 text-primary" />
+                Callback URL / Webhook URL
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">Copy URL ini dan paste ke pengaturan masing-masing provider. URL ini menerima notifikasi status transaksi secara otomatis.</p>
+              <div className="space-y-3">
+                {webhookUrls.map(w => (
+                  <div key={w.key} className="bg-muted/30 border border-border rounded-xl p-3">
+                    <p className="text-xs font-semibold text-foreground mb-0.5">{w.label}</p>
+                    <p className="text-[10px] text-muted-foreground mb-2">{w.desc}</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-[11px] bg-background border border-border rounded-lg px-3 py-2 text-primary font-mono break-all">
+                        {w.url}
+                      </code>
+                      <button
+                        onClick={() => handleCopy(w.url, w.key)}
+                        className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                      >
+                        {copied === w.key ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-primary" />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Provider Priority */}

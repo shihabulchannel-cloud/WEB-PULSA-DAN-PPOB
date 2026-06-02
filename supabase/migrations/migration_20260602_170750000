@@ -1,0 +1,6 @@
+-- Save webhook URLs to settings for easy display in admin
+INSERT INTO settings (key, value) VALUES
+  ('webhook_url_digiflazz', 'https://spb-t4n279o63etzu8pu.supabase.opentrust.net/functions/v1/digiflazz-webhook'),
+  ('webhook_url_vip_reseller', 'https://spb-t4n279o63etzu8pu.supabase.opentrust.net/functions/v1/vip-reseller-webhook'),
+  ('webhook_url_duitku', 'https://spb-t4n279o63etzu8pu.supabase.opentrust.net/functions/v1/duitku-webhook')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
