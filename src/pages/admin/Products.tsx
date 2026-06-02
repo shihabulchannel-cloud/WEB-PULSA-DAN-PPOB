@@ -87,12 +87,27 @@ export default function AdminProducts() {
   const handleSyncDigiflazz = async () => {
     setSyncing(true);
     try {
-      const { error } = await supabase.functions.invoke('digiflazz-sync', {});
-      if (error) throw error;
-      toast({ title: 'Sinkronisasi berhasil', description: 'Produk Digiflazz berhasil disinkronkan' });
+      const { data, error } = await supabase.functions.invoke('digiflazz-sync', {});
+      if (error) {
+        // FunctionsHttpError from non-2xx response
+        const msg = error?.message || 'Koneksi ke server gagal';
+        toast({ title: 'Sinkronisasi gagal', description: msg, variant: 'destructive' });
+        return;
+      }
+      if (data?.error || data?.success === false) {
+        // Function returned 200 but with error in body
+        const msg = data.error || 'Terjadi kesalahan sinkronisasi';
+        toast({ title: 'Sinkronisasi gagal', description: msg, variant: 'destructive' });
+        return;
+      }
+      toast({
+        title: 'Sinkronisasi berhasil',
+        description: data?.message || `${data?.synced || data?.imported || 0} produk disinkronkan`,
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-    } catch {
-      toast({ title: 'Sinkronisasi gagal', description: 'Pastikan API key Digiflazz sudah dikonfigurasi di Pengaturan', variant: 'destructive' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan tidak diketahui';
+      toast({ title: 'Sinkronisasi gagal', description: msg, variant: 'destructive' });
     } finally {
       setSyncing(false);
     }

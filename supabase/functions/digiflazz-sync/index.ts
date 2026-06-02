@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  if (!authHeader) return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -67,8 +67,8 @@ Deno.serve(async (req) => {
     const defaultMarkup = parseInt(cfg.default_markup || "500", 10);
 
     if (!username || !apiKey) {
-      return new Response(JSON.stringify({ error: "Digiflazz credentials not configured" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      return new Response(JSON.stringify({ success: false, error: "Kredensial Digiflazz belum dikonfigurasi. Silakan isi username dan API key di menu Pengaturan." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
@@ -85,12 +85,13 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
     const duration = Date.now() - t0;
-    console.log(`[digiflazz-sync] http=${response.status} items=${data?.data?.length || 0}`);
+    console.log(`[digiflazz-sync] http=${response.status} items=${data?.data?.length || 0} rc=${data?.rc} rd=${data?.rd}`);
 
     if (!data?.data || !Array.isArray(data.data)) {
-      const errMsg = data?.rc || data?.rd || data?.message || "Invalid response from Digiflazz";
-      return new Response(JSON.stringify({ error: `Digiflazz: ${errMsg}`, response: data }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      const errMsg = data?.rd || data?.rc || data?.message || "Respons tidak valid dari Digiflazz";
+      console.error(`[digiflazz-sync] bad response: rc=${data?.rc} rd=${data?.rd}`);
+      return new Response(JSON.stringify({ success: false, error: `Digiflazz: ${errMsg}`, response: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
@@ -150,8 +151,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("[digiflazz-sync] error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 });
