@@ -53,3 +53,10 @@ export function getStatusLabel(status: string | null | undefined): string {
     default: return status || '-';
   }
 }
+
+export function maskPhoneNumber(phone: string | null | undefined): string {
+  if (!phone) return '-';
+  const s = String(phone);
+  if (s.length <= 6) return s;
+  return s.slice(0, 4) + '****' + s.slice(-3);
+}
