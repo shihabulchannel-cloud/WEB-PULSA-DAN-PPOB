@@ -60,3 +60,12 @@ export function maskPhoneNumber(phone: string | null | undefined): string {
   if (s.length <= 6) return s;
   return s.slice(0, 4) + '****' + s.slice(-3);
 }
+
+export function generateInvoiceNo(): string {
+  const now = new Date();
+  const pad = (n: number, l = 2) => String(n).padStart(l, '0');
+  const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+  const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const rand = Math.floor(Math.random() * 9000) + 1000;
+  return `INV${datePart}${timePart}${rand}`;
+}
