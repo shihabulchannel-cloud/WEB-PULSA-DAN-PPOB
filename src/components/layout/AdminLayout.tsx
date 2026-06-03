@@ -4,11 +4,12 @@ import {
   LayoutDashboard, Package, ShoppingCart, Settings, BarChart3,
   FileText, Bell, ChevronLeft, ChevronRight,
   Zap, LogOut, Tag, Image, HelpCircle, Star, Menu, X,
-  Wifi, Activity, Database, PenSquare, Server, Users, CreditCard, ClipboardList
+  Wifi, Activity, Database, PenSquare, Server, Users, CreditCard, ClipboardList, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useSetting } from '@/hooks/useSettings';
+import { AdminErrorBoundary } from '@/components/AdminErrorBoundary';
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 type NavGroup = { group: string; items: NavItem[] };
@@ -174,7 +175,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="font-bold text-sm text-foreground">{currentItem?.label || siteName}</span>
           </div>
           <Link to="/" className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors" title="Lihat website">
-            <FileCode className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" />
           </Link>
         </header>
 
@@ -185,12 +186,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {currentItem && <><span>/</span><span className="text-foreground font-medium">{currentItem.label}</span></>}
           </div>
           <Link to="/" target="_blank" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-            <FileCode className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5" />
             Lihat Website
           </Link>
         </div>
 
-        {children}
+        <AdminErrorBoundary>
+          {children}
+        </AdminErrorBoundary>
       </div>
     </div>
   );
