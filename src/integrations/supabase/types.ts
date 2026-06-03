@@ -3627,6 +3627,262 @@ export type Database = {
           },
         ]
       }
+      reseller_applications: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          kota: string | null
+          nama: string
+          nama_toko: string | null
+          notes: string | null
+          status: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          kota?: string | null
+          nama: string
+          nama_toko?: string | null
+          notes?: string | null
+          status?: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          kota?: string | null
+          nama?: string
+          nama_toko?: string | null
+          notes?: string | null
+          status?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      reseller_balance_history: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          balance_before: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          reseller_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reseller_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reseller_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_balance_history_reseller_id_fkey"
+            columns: ["reseller_id"]
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reseller_balances: {
+        Row: {
+          balance: number | null
+          id: string
+          reseller_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          balance?: number | null
+          id?: string
+          reseller_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          balance?: number | null
+          id?: string
+          reseller_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_balances_reseller_id_fkey"
+            columns: ["reseller_id"]
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reseller_deposits: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_name: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          proof_url: string | null
+          reseller_id: string
+          sender_name: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          proof_url?: string | null
+          reseller_id: string
+          sender_name?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          proof_url?: string | null
+          reseller_id?: string
+          sender_name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_deposits_reseller_id_fkey"
+            columns: ["reseller_id"]
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reseller_prices: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          markup_amount: number | null
+          markup_type: string | null
+          product_id: string | null
+          reseller_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          markup_amount?: number | null
+          markup_type?: string | null
+          product_id?: string | null
+          reseller_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          markup_amount?: number | null
+          markup_type?: string | null
+          product_id?: string | null
+          reseller_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_prices_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reseller_prices_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reseller_prices_reseller_id_fkey"
+            columns: ["reseller_id"]
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resellers: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          kota: string | null
+          nama: string
+          updated_at: string | null
+          user_id: string | null
+          username: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          kota?: string | null
+          nama: string
+          updated_at?: string | null
+          user_id?: string | null
+          username: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          kota?: string | null
+          nama?: string
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           created_at: string | null
@@ -4113,6 +4369,39 @@ export type Database = {
         Relationships: []
       }
       messages_2026_06_05: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2026_06_06: {
         Row: {
           event: string | null
           extension: string

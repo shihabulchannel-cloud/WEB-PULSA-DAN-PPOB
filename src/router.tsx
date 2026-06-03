@@ -29,7 +29,16 @@ import AdminCMS from "./pages/admin/CMS";
 import AdminSystemLogs from "./pages/admin/SystemLogs";
 import AdminSystemHealth from "./pages/admin/SystemHealth";
 import AdminProviders from "./pages/admin/Providers";
+import AdminResellers from "./pages/admin/Resellers";
+import AdminResellerApplications from "./pages/admin/ResellerApplications";
+import AdminResellerDeposits from "./pages/admin/ResellerDeposits";
+import ResellerLogin from "./pages/reseller/Login";
+import ResellerDashboard from "./pages/reseller/Dashboard";
+import ResellerDeposit from "./pages/reseller/Deposit";
+import ResellerTransactions from "./pages/reseller/Transactions";
+import ResellerProfile from "./pages/reseller/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedResellerRoute from "./components/ProtectedResellerRoute";
 
 export const routers = [
   // Public Routes
@@ -49,6 +58,13 @@ export const routers = [
   { path: "/blog", name: "blog", element: <StaticPage page="about" /> },
   { path: "/promo", name: "promo", element: <PromoPage /> },
   { path: "/reseller", name: "reseller", element: <ResellerPage /> },
+
+  // Reseller Portal Routes
+  { path: "/reseller/login", name: "reseller-login", element: <ResellerLogin /> },
+  { path: "/reseller/dashboard", name: "reseller-dashboard", element: <ProtectedResellerRoute><ResellerDashboard /></ProtectedResellerRoute> },
+  { path: "/reseller/deposit", name: "reseller-deposit", element: <ProtectedResellerRoute><ResellerDeposit /></ProtectedResellerRoute> },
+  { path: "/reseller/transactions", name: "reseller-transactions", element: <ProtectedResellerRoute><ResellerTransactions /></ProtectedResellerRoute> },
+  { path: "/reseller/profile", name: "reseller-profile", element: <ProtectedResellerRoute><ResellerProfile /></ProtectedResellerRoute> },
 
   // Admin Routes
   { path: "/admin/login", name: "admin-login", element: <AdminLogin /> },
@@ -71,6 +87,9 @@ export const routers = [
   { path: "/admin/logs", name: "admin-logs", element: <ProtectedRoute><AdminSystemLogs /></ProtectedRoute> },
   { path: "/admin/health", name: "admin-health", element: <ProtectedRoute><AdminSystemHealth /></ProtectedRoute> },
   { path: "/admin/settings", name: "admin-settings", element: <ProtectedRoute><AdminSettings /></ProtectedRoute> },
+  { path: "/admin/resellers", name: "admin-resellers", element: <ProtectedRoute><AdminResellers /></ProtectedRoute> },
+  { path: "/admin/reseller-applications", name: "admin-reseller-apps", element: <ProtectedRoute><AdminResellerApplications /></ProtectedRoute> },
+  { path: "/admin/reseller-deposits", name: "admin-reseller-deposits", element: <ProtectedRoute><AdminResellerDeposits /></ProtectedRoute> },
 
   // Catch all
   { path: "*", name: "404", element: <NotFound /> },

@@ -1,0 +1,127 @@
+-- ============================================================
+-- RESELLER SYSTEM MIGRATION (SAFE — ADD ONLY, NO DELETE)
+-- ============================================================
+
+-- 1. Reseller Applications (form pendaftaran publik)
+CREATE TABLE IF NOT EXISTS reseller_applications (
+  id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+  nama text NOT NULL,
+  whatsapp text NOT NULL,
+  email text,
+  kota text,
+  nama_toko text,
+  status text NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'approved', 'rejected')),
+  notes text,
+  created_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE reseller_applications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can submit applications" ON reseller_applications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admins can manage applications" ON reseller_applications FOR ALL USING (auth.role() = 'authenticated');
+
+-- 2. Resellers (profil reseller, dibuat oleh admin)
+CREATE TABLE IF NOT EXISTS resellers (
+  id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  nama text NOT NULL,
+  username text UNIQUE NOT NULL,
+  whatsapp text,
+  email text NOT NULL,
+  kota text,
+  is_active boolean DEFAULT true,
+  created_by uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE resellers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage resellers" ON resellers FOR ALL USING (auth.role() = 'authenticated' AND (auth.jwt()->>'role' = 'authenticated'));
+CREATE POLICY "Resellers can read own" ON resellers FOR SELECT USING (auth.uid() = user_id);
+
+-- 3. Reseller Balances
+CREATE TABLE IF NOT EXISTS reseller_balances (
+  id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+  reseller_id uuid NOT NULL REFERENCES resellers(id) ON DELETE CASCADE UNIQUE,
+  balance numeric(15,2) DEFAULT 0,
+  updated_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE reseller_balances ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage balances" ON reseller_balances FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Resellers can read own balance" ON reseller_balances FOR SELECT USING (
+  EXISTS (SELECT 1 FROM resellers WHERE resellers.id = reseller_id AND resellers.user_id = auth.uid())
+);
+
+-- 4. Reseller Balance History
+CREATE TABLE IF NOT EXISTS reseller_balance_history (
+  id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+  reseller_id uuid NOT NULL REFERENCES resellers(id) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('credit','debit')),
+  amount numeric(15,2) NOT NULL,
+  balance_before numeric(15,2) DEFAULT 0,
+  balance_after numeric(15,2) DEFAULT 0,
+  description text,
+  reference_id text,
+  created_by uuid,
+  created_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE reseller_balance_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage balance history" ON reseller_balance_history FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Resellers can read own history" ON reseller_balance_history FOR SELECT USING (
+  EXISTS (SELECT 1 FROM resellers WHERE resellers.id = reseller_id AND resellers.user_id = auth.uid())
+);
+
+-- 5. Reseller Deposits (pengajuan top up saldo)
+CREATE TABLE IF NOT EXISTS reseller_deposits (
+  id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+  reseller_id uuid NOT NULL REFERENCES resellers(id) ON DELETE CASCADE,
+  amount numeric(15,2) NOT NULL,
+  bank_name text,
+  sender_name text,
+  proof_url text,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  notes text,
+  approved_by uuid,
+  approved_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE reseller_deposits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage deposits" ON reseller_deposits FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Resellers can insert deposits" ON reseller_deposits FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM resellers WHERE resellers.id = reseller_id AND resellers.user_id = auth.uid())
+);
+CREATE POLICY "Resellers can read own deposits" ON reseller_deposits FOR SELECT USING (
+  EXISTS (SELECT 1 FROM resellers WHERE resellers.id = reseller_id AND resellers.user_id = auth.uid())
+);
+
+-- 6. Reseller Prices (harga khusus reseller)
+CREATE TABLE IF NOT EXISTS reseller_prices (
+  id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+  reseller_id uuid REFERENCES resellers(id) ON DELETE CASCADE,
+  product_id uuid REFERENCES products(id) ON DELETE CASCADE,
+  category_id uuid REFERENCES categories(id) ON DELETE CASCADE,
+  markup_amount numeric(15,2) DEFAULT 0,
+  markup_type text DEFAULT 'fixed' CHECK (markup_type IN ('fixed','percent')),
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE reseller_prices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage reseller prices" ON reseller_prices FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Resellers can read prices" ON reseller_prices FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 7. Storage bucket for deposit proof
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('reseller-deposits', 'reseller-deposits', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policy: anyone authenticated can upload
+CREATE POLICY "Authenticated can upload deposit proof" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'reseller-deposits' AND auth.role() = 'authenticated');
+CREATE POLICY "Public can read deposit proof" ON storage.objects
+  FOR SELECT USING (bucket_id = 'reseller-deposits');
+
+-- 8. Add bank settings keys (for admin deposit info)
+INSERT INTO settings (key, value) VALUES
+  ('deposit_bank_name', ''),
+  ('deposit_account_number', ''),
+  ('deposit_account_name', ''),
+  ('deposit_qris_url', '')
+ON CONFLICT (key) DO NOTHING;

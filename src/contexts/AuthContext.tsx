@@ -10,6 +10,7 @@ export interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isReseller: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen for auth state changes first
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setTimeout(() => {
         setSession(session);
@@ -29,23 +29,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }, 0);
     });
 
-    // Get existing session, handle invalid refresh token gracefully
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        // Invalid/expired refresh token — clear bad session silently
         supabase.auth.signOut().catch(() => {});
-        setSession(null);
-        setUser(null);
+        setSession(null); setUser(null);
       } else {
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(session); setUser(session?.user ?? null);
       }
       setLoading(false);
     }).catch(() => {
-      // Network or unexpected error — clear state
-      setSession(null);
-      setUser(null);
-      setLoading(false);
+      setSession(null); setUser(null); setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -56,18 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signOut = async () => { await supabase.auth.signOut(); };
 
-  // isAdmin: user must be authenticated AND have role='admin' in metadata
   const isAdmin = !!user && (
     user.user_metadata?.role === 'admin' ||
     user.email === 'admin@shielacomcell.com'
   );
 
+  const isReseller = !!user && user.user_metadata?.role === 'reseller';
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signOut, isAdmin, isReseller }}>
       {children}
     </AuthContext.Provider>
   );
