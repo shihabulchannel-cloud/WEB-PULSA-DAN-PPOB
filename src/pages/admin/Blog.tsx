@@ -10,16 +10,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { formatDate } from '@/lib/utils-app';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploader from '@/components/ImageUploader';
 
 interface Blog {
   id: string; title: string; slug: string; excerpt: string; content: string;
-  meta_title: string; meta_description: string; is_published: boolean; created_at: string;
+  cover_image?: string; meta_title: string; meta_description: string; is_published: boolean; created_at: string;
 }
 
 export default function AdminBlog() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Blog | null>(null);
-  const [form, setForm] = useState({ title: '', slug: '', excerpt: '', content: '', meta_title: '', meta_description: '' });
+  const [form, setForm] = useState({ title: '', slug: '', excerpt: '', content: '', cover_image: '', meta_title: '', meta_description: '' });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -53,7 +54,7 @@ export default function AdminBlog() {
 
   const openEdit = (b: Blog) => {
     setEditing(b);
-    setForm({ title: b.title, slug: b.slug, excerpt: b.excerpt || '', content: b.content || '', meta_title: b.meta_title || '', meta_description: b.meta_description || '' });
+    setForm({ title: b.title, slug: b.slug, excerpt: b.excerpt || '', content: b.content || '', cover_image: b.cover_image || '', meta_title: b.meta_title || '', meta_description: b.meta_description || '' });
     setShowForm(true);
   };
 
@@ -62,7 +63,7 @@ export default function AdminBlog() {
       <div className="p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Manajemen Blog</h1>
-          <Button onClick={() => { setEditing(null); setForm({ title: '', slug: '', excerpt: '', content: '', meta_title: '', meta_description: '' }); setShowForm(true); }} className="gap-2 gradient-button text-primary-foreground">
+          <Button onClick={() => { setEditing(null); setForm({ title: '', slug: '', excerpt: '', content: '', cover_image: '', meta_title: '', meta_description: '' }); setShowForm(true); }} className="gap-2 gradient-button text-primary-foreground">
             <Plus className="w-4 h-4" /> Tulis Artikel
           </Button>
         </div>
@@ -122,6 +123,13 @@ export default function AdminBlog() {
               <Label>Slug URL</Label>
               <Input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="slug-artikel" className="mt-1.5" />
             </div>
+            <ImageUploader
+              bucket="site-images"
+              folder="blogs"
+              value={form.cover_image}
+              onChange={url => setForm(f => ({ ...f, cover_image: url }))}
+              label="Gambar Cover (opsional)"
+            />
             <div>
               <Label>Ringkasan</Label>
               <Textarea value={form.excerpt} onChange={e => setForm(f => ({ ...f, excerpt: e.target.value }))} placeholder="Ringkasan singkat artikel" rows={2} className="mt-1.5" />

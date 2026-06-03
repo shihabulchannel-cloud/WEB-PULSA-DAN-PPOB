@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Edit2, Trash2, Power, PowerOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploader from '@/components/ImageUploader';
 
 interface Banner {
   id: string; title: string; subtitle: string; image_url: string; link_url: string; button_text: string; sort_order: number; is_active: boolean;
@@ -103,8 +104,13 @@ export default function AdminBanners() {
               <Textarea value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} rows={2} className="mt-1.5" />
             </div>
             <div>
-              <Label>URL Gambar</Label>
-              <Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." className="mt-1.5" />
+              <ImageUploader
+                bucket="site-images"
+                folder="banners"
+                value={form.image_url}
+                onChange={url => setForm(f => ({ ...f, image_url: url }))}
+                label="Gambar Banner"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Product {
   id: string; name: string; brand: string; sku: string; buyer_sku_code: string;
-  modal_price: number; sell_price: number; markup_amount: number; is_active: boolean;
+  modal_price: number; sell_price: number; reseller_price: number; markup_amount: number; is_active: boolean;
   stock_status: string; categories?: { name: string };
 }
 
@@ -26,7 +26,7 @@ export default function AdminProducts() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const emptyForm = { name: '', brand: '', sku: '', buyer_sku_code: '', modal_price: '', markup_amount: '', category_id: '' };
+  const emptyForm = { name: '', brand: '', sku: '', buyer_sku_code: '', modal_price: '', markup_amount: '', reseller_price: '', category_id: '' };
   const [form, setForm] = useState(emptyForm);
 
   // Auto-calculated sell price in form
@@ -54,12 +54,14 @@ export default function AdminProducts() {
     mutationFn: async () => {
       const markupAmt = parseFloat(form.markup_amount) || 0;
       const modalP = parseFloat(form.modal_price) || 0;
+      const resellerP = parseFloat(form.reseller_price) || modalP + markupAmt;
       const payload = {
         name: form.name, brand: form.brand, sku: form.sku,
         buyer_sku_code: form.buyer_sku_code,
         modal_price: modalP,
         markup_amount: markupAmt,
         sell_price: modalP + markupAmt,
+        reseller_price: resellerP,
         category_id: form.category_id || null,
       };
       if (editingProduct) {
@@ -141,6 +143,7 @@ export default function AdminProducts() {
       buyer_sku_code: p.buyer_sku_code || '',
       modal_price: p.modal_price.toString(),
       markup_amount: (p.markup_amount ?? p.sell_price - p.modal_price).toString(),
+      reseller_price: (p.reseller_price ?? p.sell_price).toString(),
       category_id: '',
     });
     setShowForm(true);
@@ -357,6 +360,19 @@ export default function AdminProducts() {
                   <p className="text-sm font-semibold text-primary mt-0.5">= Modal + Markup</p>
                 </div>
                 <p className="text-xl font-bold text-primary">{formatCurrency(formSellPrice)}</p>
+              </div>
+              {/* Reseller price */}
+              <div>
+                <Label className="text-sm">Harga Khusus Reseller (Rp)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.reseller_price}
+                  onChange={e => setForm(f => ({ ...f, reseller_price: e.target.value }))}
+                  placeholder={formSellPrice.toString()}
+                  className="mt-1.5"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Kosongkan untuk sama dengan harga jual</p>
               </div>
             </div>
 

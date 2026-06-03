@@ -1,0 +1,45 @@
+-- 1. Add reseller_price to products (SAFE ADD)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS reseller_price numeric DEFAULT 0;
+UPDATE products SET reseller_price = sell_price WHERE reseller_price = 0 OR reseller_price IS NULL;
+
+-- 2. wallet_transactions unified log
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id),
+  reseller_id uuid REFERENCES resellers(id) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('deposit','transfer','purchase','refund')),
+  amount numeric NOT NULL,
+  balance_before numeric DEFAULT 0,
+  balance_after numeric DEFAULT 0,
+  description text,
+  reference_id text,
+  created_by uuid,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins manage wallet_transactions" ON wallet_transactions;
+DROP POLICY IF EXISTS "Resellers read own wallet" ON wallet_transactions;
+CREATE POLICY "Admins manage wallet_transactions" ON wallet_transactions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Resellers read own wallet" ON wallet_transactions FOR SELECT USING (
+  EXISTS (SELECT 1 FROM resellers r WHERE r.id = reseller_id AND r.user_id = auth.uid())
+);
+
+-- 3. Add reseller_id to transactions (SAFE ADD - won't break existing)
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reseller_id uuid REFERENCES resellers(id);
+
+-- 4. Storage bucket: site-images
+INSERT INTO storage.buckets (id, name, public) VALUES ('site-images','site-images',true) ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies (drop first to avoid conflicts)
+DROP POLICY IF EXISTS "Authenticated upload site images" ON storage.objects;
+DROP POLICY IF EXISTS "Public read site images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated delete site images" ON storage.objects;
+CREATE POLICY "Authenticated upload site images" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'site-images' AND auth.role() = 'authenticated');
+CREATE POLICY "Public read site images" ON storage.objects FOR SELECT USING (bucket_id = 'site-images');
+CREATE POLICY "Authenticated delete site images" ON storage.objects FOR DELETE USING (bucket_id = 'site-images' AND auth.role() = 'authenticated');
+
+-- 5. Settings keys for deposit bank info
+INSERT INTO settings (key, value) VALUES
+  ('deposit_bank_name',''), ('deposit_account_number',''),
+  ('deposit_account_name',''), ('deposit_qris_url','')
+ON CONFLICT (key) DO NOTHING;

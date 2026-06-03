@@ -8,15 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Edit2, Trash2, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploader from '@/components/ImageUploader';
 
 interface Testimonial {
-  id: string; name: string; rating: number; comment: string; product_name: string; is_active: boolean;
+  id: string; name: string; rating: number; comment: string; product_name: string; avatar?: string; is_active: boolean;
 }
 
 export default function AdminTestimonials() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Testimonial | null>(null);
-  const [form, setForm] = useState({ name: '', rating: '5', comment: '', product_name: '' });
+  const [form, setForm] = useState({ name: '', rating: '5', comment: '', product_name: '', avatar: '' });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -53,7 +54,7 @@ export default function AdminTestimonials() {
       <div className="p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Manajemen Testimoni</h1>
-          <Button onClick={() => { setEditing(null); setForm({ name: '', rating: '5', comment: '', product_name: '' }); setShowForm(true); }} className="gap-2 gradient-button text-primary-foreground">
+          <Button onClick={() => { setEditing(null); setForm({ name: '', rating: '5', comment: '', product_name: '', avatar: '' }); setShowForm(true); }} className="gap-2 gradient-button text-primary-foreground">
             <Plus className="w-4 h-4" /> Tambah Testimoni
           </Button>
         </div>
@@ -72,7 +73,7 @@ export default function AdminTestimonials() {
                   <p className="text-sm text-muted-foreground line-clamp-2">"{t.comment}"</p>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditing(t); setForm({ name: t.name, rating: t.rating.toString(), comment: t.comment, product_name: t.product_name || '' }); setShowForm(true); }}><Edit2 className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditing(t); setForm({ name: t.name, rating: t.rating.toString(), comment: t.comment, product_name: t.product_name || '', avatar: t.avatar || '' }); setShowForm(true); }}><Edit2 className="w-3.5 h-3.5" /></Button>
                   <button onClick={() => toggleMutation.mutate(t)} className={`px-2 py-1 rounded text-xs font-medium ${t.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{t.is_active ? 'Tampil' : 'Semb.'}</button>
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => { if (confirm('Hapus?')) deleteMutation.mutate(t.id); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                 </div>
@@ -95,6 +96,13 @@ export default function AdminTestimonials() {
               </select>
             </div>
             <div><Label>Komentar</Label><textarea value={form.comment} onChange={e => setForm(f => ({ ...f, comment: e.target.value }))} rows={3} className="w-full mt-1.5 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" /></div>
+            <ImageUploader
+              bucket="site-images"
+              folder="testimonials"
+              value={form.avatar}
+              onChange={url => setForm(f => ({ ...f, avatar: url }))}
+              label="Foto Profil (opsional)"
+            />
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setShowForm(false)} className="flex-1">Batal</Button>
               <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex-1 gradient-button text-primary-foreground">Simpan</Button>

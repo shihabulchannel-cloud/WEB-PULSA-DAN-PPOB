@@ -29,10 +29,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get deposit details
     const { data: deposit, error: depositError } = await supabaseAdmin
       .from("reseller_deposits")
-      .select("*, resellers(id)")
+      .select("*, resellers(id, user_id)")
       .eq("id", deposit_id)
       .maybeSingle();
 
@@ -49,7 +48,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === "approve") {
-      // Get current balance
       const { data: balData } = await supabaseAdmin
         .from("reseller_balances")
         .select("balance")
@@ -64,14 +62,28 @@ Deno.serve(async (req) => {
         .update({ balance: newBalance, updated_at: new Date().toISOString() })
         .eq("reseller_id", deposit.reseller_id);
 
-      // Record history
+      // Legacy balance history
       await supabaseAdmin.from("reseller_balance_history").insert({
         reseller_id: deposit.reseller_id,
         type: "credit",
         amount: deposit.amount,
         balance_before: currentBalance,
         balance_after: newBalance,
-        description: `Deposit disetujui #${deposit_id.slice(0,8)}`,
+        description: `Deposit disetujui #${deposit_id.slice(0, 8)}`,
+        reference_id: deposit_id,
+        created_by: approved_by || null,
+      });
+
+      // Unified wallet_transactions log
+      const resellerUserId = (deposit.resellers as { user_id?: string } | null)?.user_id || null;
+      await supabaseAdmin.from("wallet_transactions").insert({
+        reseller_id: deposit.reseller_id,
+        user_id: resellerUserId,
+        type: "deposit",
+        amount: deposit.amount,
+        balance_before: currentBalance,
+        balance_after: newBalance,
+        description: `Deposit disetujui — ${deposit.bank_name || ''} atas nama ${deposit.sender_name || ''}`,
         reference_id: deposit_id,
         created_by: approved_by || null,
       });

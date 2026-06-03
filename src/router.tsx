@@ -32,11 +32,14 @@ import AdminProviders from "./pages/admin/Providers";
 import AdminResellers from "./pages/admin/Resellers";
 import AdminResellerApplications from "./pages/admin/ResellerApplications";
 import AdminResellerDeposits from "./pages/admin/ResellerDeposits";
+import AdminWalletTransactions from "./pages/admin/WalletTransactions";
 import ResellerLogin from "./pages/reseller/Login";
 import ResellerDashboard from "./pages/reseller/Dashboard";
 import ResellerDeposit from "./pages/reseller/Deposit";
 import ResellerTransactions from "./pages/reseller/Transactions";
 import ResellerProfile from "./pages/reseller/Profile";
+import ResellerProducts from "./pages/reseller/Products";
+import ResellerBalance from "./pages/reseller/Balance";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedResellerRoute from "./components/ProtectedResellerRoute";
 
@@ -65,6 +68,8 @@ export const routers = [
   { path: "/reseller/deposit", name: "reseller-deposit", element: <ProtectedResellerRoute><ResellerDeposit /></ProtectedResellerRoute> },
   { path: "/reseller/transactions", name: "reseller-transactions", element: <ProtectedResellerRoute><ResellerTransactions /></ProtectedResellerRoute> },
   { path: "/reseller/profile", name: "reseller-profile", element: <ProtectedResellerRoute><ResellerProfile /></ProtectedResellerRoute> },
+  { path: "/reseller/products", name: "reseller-products", element: <ProtectedResellerRoute><ResellerProducts /></ProtectedResellerRoute> },
+  { path: "/reseller/balance", name: "reseller-balance", element: <ProtectedResellerRoute><ResellerBalance /></ProtectedResellerRoute> },
 
   // Admin Routes
   { path: "/admin/login", name: "admin-login", element: <AdminLogin /> },
@@ -90,6 +95,7 @@ export const routers = [
   { path: "/admin/resellers", name: "admin-resellers", element: <ProtectedRoute><AdminResellers /></ProtectedRoute> },
   { path: "/admin/reseller-applications", name: "admin-reseller-apps", element: <ProtectedRoute><AdminResellerApplications /></ProtectedRoute> },
   { path: "/admin/reseller-deposits", name: "admin-reseller-deposits", element: <ProtectedRoute><AdminResellerDeposits /></ProtectedRoute> },
+  { path: "/admin/wallet-transactions", name: "admin-wallet-transactions", element: <ProtectedRoute><AdminWalletTransactions /></ProtectedRoute> },
 
   // Catch all
   { path: "*", name: "404", element: <NotFound /> },

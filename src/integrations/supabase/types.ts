@@ -3564,6 +3564,7 @@ export type Database = {
           modal_price: number | null
           name: string
           provider: string | null
+          reseller_price: number | null
           sell_price: number | null
           seller_product_status: boolean | null
           sku: string | null
@@ -3587,6 +3588,7 @@ export type Database = {
           modal_price?: number | null
           name: string
           provider?: string | null
+          reseller_price?: number | null
           sell_price?: number | null
           seller_product_status?: boolean | null
           sku?: string | null
@@ -3610,6 +3612,7 @@ export type Database = {
           modal_price?: number | null
           name?: string
           provider?: string | null
+          reseller_price?: number | null
           sell_price?: number | null
           seller_product_status?: boolean | null
           sku?: string | null
@@ -3971,6 +3974,7 @@ export type Database = {
           product_sku: string | null
           profit: number | null
           quantity: number | null
+          reseller_id: string | null
           sell_price: number
           status: string | null
           target_id: string
@@ -4007,6 +4011,7 @@ export type Database = {
           product_sku?: string | null
           profit?: number | null
           quantity?: number | null
+          reseller_id?: string | null
           sell_price: number
           status?: string | null
           target_id: string
@@ -4043,6 +4048,7 @@ export type Database = {
           product_sku?: string | null
           profit?: number | null
           quantity?: number | null
+          reseller_id?: string | null
           sell_price?: number
           status?: string | null
           target_id?: string
@@ -4060,6 +4066,61 @@ export type Database = {
             foreignKeyName: "transactions_product_id_fkey"
             columns: ["product_id"]
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_reseller_id_fkey"
+            columns: ["reseller_id"]
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          balance_before: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          reseller_id: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reseller_id?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reseller_id?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_reseller_id_fkey"
+            columns: ["reseller_id"]
+            referencedRelation: "resellers"
             referencedColumns: ["id"]
           },
         ]
@@ -4138,39 +4199,6 @@ export type Database = {
   realtime: {
     Tables: {
       messages: {
-        Row: {
-          event: string | null
-          extension: string
-          id: string
-          inserted_at: string
-          payload: Json | null
-          private: boolean | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          event?: string | null
-          extension: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          event?: string | null
-          extension?: string
-          id?: string
-          inserted_at?: string
-          payload?: Json | null
-          private?: boolean | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      messages_2026_05_30: {
         Row: {
           event: string | null
           extension: string

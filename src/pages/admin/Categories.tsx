@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Edit2, Trash2, Power, PowerOff, Gamepad2, Phone, Wifi, Wallet, FileText, Ticket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploader from '@/components/ImageUploader';
 
 interface Category {
-  id: string; name: string; slug: string; description: string; icon: string; sort_order: number; is_active: boolean;
+  id: string; name: string; slug: string; description: string; icon: string; image_url?: string; sort_order: number; is_active: boolean;
 }
 
 const icons = ['Gamepad2', 'Phone', 'Wifi', 'Wallet', 'FileText', 'Ticket', 'Package'];
@@ -20,7 +21,7 @@ const iconComponents: Record<string, React.ComponentType<{ className?: string }>
 export default function AdminCategories() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
-  const [form, setForm] = useState({ name: '', slug: '', description: '', icon: 'Package', sort_order: '1' });
+  const [form, setForm] = useState({ name: '', slug: '', description: '', icon: 'Package', image_url: '', sort_order: '1' });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -57,7 +58,7 @@ export default function AdminCategories() {
       <div className="p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Manajemen Kategori</h1>
-          <Button onClick={() => { setEditing(null); setForm({ name: '', slug: '', description: '', icon: 'Package', sort_order: String(categories.length + 1) }); setShowForm(true); }} className="gap-2 gradient-button text-primary-foreground">
+          <Button onClick={() => { setEditing(null); setForm({ name: '', slug: '', description: '', icon: 'Package', image_url: '', sort_order: String(categories.length + 1) }); setShowForm(true); }} className="gap-2 gradient-button text-primary-foreground">
             <Plus className="w-4 h-4" /> Tambah Kategori
           </Button>
         </div>
@@ -76,7 +77,7 @@ export default function AdminCategories() {
                   <p className="text-xs text-muted-foreground">{cat.slug}</p>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditing(cat); setForm({ name: cat.name, slug: cat.slug, description: cat.description || '', icon: cat.icon, sort_order: cat.sort_order.toString() }); setShowForm(true); }}>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditing(cat); setForm({ name: cat.name, slug: cat.slug, description: cat.description || '', icon: cat.icon, image_url: cat.image_url || '', sort_order: cat.sort_order.toString() }); setShowForm(true); }}>
                     <Edit2 className="w-3.5 h-3.5" />
                   </Button>
                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleMutation.mutate(cat)}>
@@ -106,6 +107,13 @@ export default function AdminCategories() {
               </select>
             </div>
             <div><Label>Urutan</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: e.target.value }))} className="mt-1.5" /></div>
+            <ImageUploader
+              bucket="site-images"
+              folder="categories"
+              value={form.image_url}
+              onChange={url => setForm(f => ({ ...f, image_url: url }))}
+              label="Gambar Kategori (opsional)"
+            />
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setShowForm(false)} className="flex-1">Batal</Button>
               <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="flex-1 gradient-button text-primary-foreground">Simpan</Button>

@@ -5,9 +5,10 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Settings as SettingsIcon, Globe, CreditCard, Mail, MessageCircle, Zap, Palette, Search, Share2 } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Globe, CreditCard, Mail, MessageCircle, Zap, Palette, Search, Share2, Landmark } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploader from '@/components/ImageUploader';
 
 const sections = [
   {
@@ -23,8 +24,8 @@ const sections = [
   {
     id: 'appearance', label: 'Tampilan', icon: Palette,
     fields: [
-      { key: 'site_logo_url', label: 'URL Logo Website', placeholder: 'https://...' },
-      { key: 'site_favicon_url', label: 'URL Favicon', placeholder: 'https://.../favicon.png' },
+      { key: 'site_logo_url', label: 'Logo Website', placeholder: 'https://...', type: 'image' },
+      { key: 'site_favicon_url', label: 'Favicon', placeholder: 'https://.../favicon.png', type: 'image' },
     ],
     info: null,
   },
@@ -99,6 +100,22 @@ const sections = [
       title: 'Cara mendapatkan API VIP Payment:',
       lines: ['Login ke vipayment.id → Dashboard → API Settings', 'Copy Merchant ID dan Secret Key'],
       webhookPath: 'functions/v1/vip-payment-webhook',
+    },
+  },
+  {
+    id: 'deposit', label: 'Info Deposit', icon: Landmark,
+    fields: [
+      { key: 'deposit_bank_name', label: 'Nama Bank', placeholder: 'Contoh: BCA, BRI, Mandiri' },
+      { key: 'deposit_account_number', label: 'No. Rekening', placeholder: '1234567890' },
+      { key: 'deposit_account_name', label: 'Nama Pemilik Rekening', placeholder: 'Nama pemilik rekening' },
+      { key: 'deposit_qris_url', label: 'URL Gambar QRIS (opsional)', placeholder: 'https://...', type: 'image' },
+    ],
+    info: {
+      color: 'bg-blue-50 border-blue-200 text-blue-700',
+      codeClass: 'bg-blue-100',
+      title: 'Info Rekening Deposit Reseller:',
+      lines: ['Isi info rekening yang akan ditampilkan ke reseller saat mereka melakukan deposit saldo.', 'Reseller harus upload bukti transfer untuk konfirmasi deposit.'],
+      webhookPath: null,
     },
   },
   {
@@ -197,14 +214,26 @@ export default function AdminSettings() {
                 <div className="space-y-4">
                   {section.fields.map(field => (
                     <div key={field.key}>
-                      <Label className="text-sm">{field.label}</Label>
-                      <Input
-                        type={(field as { type?: string }).type || 'text'}
-                        placeholder={field.placeholder}
-                        value={values[field.key] || ''}
-                        onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))}
-                        className="mt-1.5"
-                      />
+                      {(field as { type?: string }).type === 'image' ? (
+                        <ImageUploader
+                          bucket="site-images"
+                          folder="settings"
+                          value={values[field.key] || ''}
+                          onChange={url => setValues(v => ({ ...v, [field.key]: url }))}
+                          label={field.label}
+                        />
+                      ) : (
+                        <>
+                          <Label className="text-sm">{field.label}</Label>
+                          <Input
+                            type={(field as { type?: string }).type || 'text'}
+                            placeholder={field.placeholder}
+                            value={values[field.key] || ''}
+                            onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))}
+                            className="mt-1.5"
+                          />
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

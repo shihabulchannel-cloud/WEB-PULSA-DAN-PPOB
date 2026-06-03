@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Settings, BarChart3,
   FileText, Bell, ChevronLeft, ChevronRight,
   Zap, LogOut, Tag, Image, HelpCircle, Star, Menu, X,
-  Wifi, Activity, Database, PenSquare, Server, Users, CreditCard, ClipboardList, ExternalLink
+  Wifi, Activity, Database, PenSquare, Server, Users, CreditCard, ClipboardList, ExternalLink, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +49,7 @@ const navGroups: NavGroup[] = [
       { label: 'Manajemen Reseller', href: '/admin/resellers', icon: Users },
       { label: 'Pendaftaran Reseller', href: '/admin/reseller-applications', icon: ClipboardList },
       { label: 'Deposit Reseller', href: '/admin/reseller-deposits', icon: CreditCard },
+      { label: 'Mutasi Wallet', href: '/admin/wallet-transactions', icon: Wallet },
     ],
   },
   {

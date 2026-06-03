@@ -33,7 +33,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Create Supabase auth user
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -47,7 +46,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Insert into resellers table
       const { data: reseller, error: resellerError } = await supabaseAdmin.from("resellers").insert({
         user_id: authUser.user.id,
         nama, username, email, whatsapp: whatsapp || "", kota: kota || "",
@@ -55,21 +53,19 @@ Deno.serve(async (req) => {
       }).select().single();
 
       if (resellerError) {
-        // Rollback auth user
         await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
         return new Response(JSON.stringify({ success: false, error: resellerError.message }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Create balance record
       await supabaseAdmin.from("reseller_balances").insert({
         reseller_id: reseller.id,
         balance: saldo_awal || 0,
       });
 
-      // Record initial balance history if saldo > 0
       if (saldo_awal && saldo_awal > 0) {
+        // Legacy balance history
         await supabaseAdmin.from("reseller_balance_history").insert({
           reseller_id: reseller.id,
           type: "credit",
@@ -77,6 +73,17 @@ Deno.serve(async (req) => {
           balance_before: 0,
           balance_after: saldo_awal,
           description: "Saldo awal",
+          created_by: created_by || null,
+        });
+        // Unified wallet_transactions log
+        await supabaseAdmin.from("wallet_transactions").insert({
+          reseller_id: reseller.id,
+          user_id: authUser.user.id,
+          type: "transfer",
+          amount: saldo_awal,
+          balance_before: 0,
+          balance_after: saldo_awal,
+          description: "Saldo awal dari admin",
           created_by: created_by || null,
         });
       }
@@ -113,11 +120,30 @@ Deno.serve(async (req) => {
         .update({ balance: newBalance, updated_at: new Date().toISOString() })
         .eq("reseller_id", reseller_id);
 
+      const desc = description || (type === "credit" ? "Penambahan saldo" : "Pengurangan saldo");
+
+      // Legacy history
       await supabaseAdmin.from("reseller_balance_history").insert({
         reseller_id, type, amount,
         balance_before: currentBalance,
         balance_after: newBalance,
-        description: description || (type === "credit" ? "Penambahan saldo" : "Pengurangan saldo"),
+        description: desc,
+        created_by: created_by || null,
+      });
+
+      // Get reseller user_id
+      const { data: resellerRow } = await supabaseAdmin
+        .from("resellers").select("user_id").eq("id", reseller_id).maybeSingle();
+
+      // Unified wallet_transactions log
+      await supabaseAdmin.from("wallet_transactions").insert({
+        reseller_id,
+        user_id: resellerRow?.user_id || null,
+        type: type === "credit" ? "transfer" : "purchase",
+        amount,
+        balance_before: currentBalance,
+        balance_after: newBalance,
+        description: desc,
         created_by: created_by || null,
       });
 

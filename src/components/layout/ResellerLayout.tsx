@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, History, User, LogOut, Menu, X, Wallet, Zap } from 'lucide-react';
+import { LayoutDashboard, CreditCard, History, User, LogOut, Menu, X, Wallet, Zap, Package, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useSetting } from '@/hooks/useSettings';
@@ -10,7 +10,9 @@ import { formatCurrency } from '@/lib/utils-app';
 
 const navItems = [
   { label: 'Dashboard', href: '/reseller/dashboard', icon: LayoutDashboard },
-  { label: 'Deposit Saldo', href: '/reseller/deposit', icon: CreditCard },
+  { label: 'Produk', href: '/reseller/products', icon: Package },
+  { label: 'Top Up Saldo', href: '/reseller/deposit', icon: CreditCard },
+  { label: 'Mutasi Saldo', href: '/reseller/balance', icon: BarChart2 },
   { label: 'Riwayat Transaksi', href: '/reseller/transactions', icon: History },
   { label: 'Profil', href: '/reseller/profile', icon: User },
 ];
