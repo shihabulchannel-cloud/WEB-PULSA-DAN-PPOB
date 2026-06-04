@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Search, Plus, Edit2, Trash2, RefreshCw, Power, PowerOff, Check, X, Tag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils-app';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploader from '@/components/ImageUploader';
 
 interface Product {
   id: string; name: string; brand: string; sku: string; buyer_sku_code: string;
@@ -26,7 +27,7 @@ export default function AdminProducts() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const emptyForm = { name: '', brand: '', sku: '', buyer_sku_code: '', modal_price: '', markup_amount: '', reseller_price: '', category_id: '' };
+  const emptyForm = { name: '', brand: '', sku: '', buyer_sku_code: '', modal_price: '', markup_amount: '', reseller_price: '', category_id: '', image_url: '' };
   const [form, setForm] = useState(emptyForm);
 
   // Auto-calculated sell price in form
@@ -63,6 +64,7 @@ export default function AdminProducts() {
         sell_price: modalP + markupAmt,
         reseller_price: resellerP,
         category_id: form.category_id || null,
+        image_url: form.image_url || null,
       };
       if (editingProduct) {
         return supabase.from('products').update(payload).eq('id', editingProduct.id);
@@ -145,6 +147,7 @@ export default function AdminProducts() {
       markup_amount: (p.markup_amount ?? p.sell_price - p.modal_price).toString(),
       reseller_price: (p.reseller_price ?? p.sell_price).toString(),
       category_id: '',
+      image_url: (p as Product & { image_url?: string }).image_url || '',
     });
     setShowForm(true);
   };
@@ -314,6 +317,13 @@ export default function AdminProducts() {
                 <Input value={form.buyer_sku_code} onChange={e => setForm(f => ({ ...f, buyer_sku_code: e.target.value }))} placeholder="Kode Digiflazz" className="mt-1.5" />
               </div>
             </div>
+            <ImageUploader
+              bucket="site-images"
+              folder="products"
+              value={form.image_url}
+              onChange={url => setForm(f => ({ ...f, image_url: url }))}
+              label="Gambar Produk (opsional)"
+            />
             <div>
               <Label>Kategori</Label>
               <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}

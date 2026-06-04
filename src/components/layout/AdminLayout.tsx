@@ -50,6 +50,7 @@ const navGroups: NavGroup[] = [
       { label: 'Pendaftaran Reseller', href: '/admin/reseller-applications', icon: ClipboardList },
       { label: 'Deposit Reseller', href: '/admin/reseller-deposits', icon: CreditCard },
       { label: 'Mutasi Wallet', href: '/admin/wallet-transactions', icon: Wallet },
+      { label: 'Pengaturan Harga', href: '/admin/reseller-pricing', icon: Tag },
     ],
   },
   {

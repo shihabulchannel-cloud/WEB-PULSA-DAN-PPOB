@@ -1,0 +1,5 @@
+-- 1a. Add reseller_markup to categories
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS reseller_markup numeric DEFAULT 0;
+
+-- 1b. Add reseller_markup_global to settings
+INSERT INTO settings (key, value) VALUES ('reseller_markup_global', '0') ON CONFLICT (key) DO NOTHING;

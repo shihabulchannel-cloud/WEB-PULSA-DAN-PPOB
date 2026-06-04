@@ -33,6 +33,7 @@ import AdminResellers from "./pages/admin/Resellers";
 import AdminResellerApplications from "./pages/admin/ResellerApplications";
 import AdminResellerDeposits from "./pages/admin/ResellerDeposits";
 import AdminWalletTransactions from "./pages/admin/WalletTransactions";
+import AdminResellerPricing from "./pages/admin/ResellerPricing";
 import ResellerLogin from "./pages/reseller/Login";
 import ResellerDashboard from "./pages/reseller/Dashboard";
 import ResellerDeposit from "./pages/reseller/Deposit";
@@ -96,6 +97,7 @@ export const routers = [
   { path: "/admin/reseller-applications", name: "admin-reseller-apps", element: <ProtectedRoute><AdminResellerApplications /></ProtectedRoute> },
   { path: "/admin/reseller-deposits", name: "admin-reseller-deposits", element: <ProtectedRoute><AdminResellerDeposits /></ProtectedRoute> },
   { path: "/admin/wallet-transactions", name: "admin-wallet-transactions", element: <ProtectedRoute><AdminWalletTransactions /></ProtectedRoute> },
+  { path: "/admin/reseller-pricing", name: "admin-reseller-pricing", element: <ProtectedRoute><AdminResellerPricing /></ProtectedRoute> },
 
   // Catch all
   { path: "*", name: "404", element: <NotFound /> },

@@ -3317,6 +3317,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean | null
           name: string
+          reseller_markup: number | null
           slug: string
           sort_order: number | null
           updated_at: string | null
@@ -3329,6 +3330,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name: string
+          reseller_markup?: number | null
           slug: string
           sort_order?: number | null
           updated_at?: string | null
@@ -3341,6 +3343,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name?: string
+          reseller_markup?: number | null
           slug?: string
           sort_order?: number | null
           updated_at?: string | null
@@ -4430,6 +4433,39 @@ export type Database = {
         Relationships: []
       }
       messages_2026_06_06: {
+        Row: {
+          event: string | null
+          extension: string
+          id: string
+          inserted_at: string
+          payload: Json | null
+          private: boolean | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          event?: string | null
+          extension: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          event?: string | null
+          extension?: string
+          id?: string
+          inserted_at?: string
+          payload?: Json | null
+          private?: boolean | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages_2026_06_07: {
         Row: {
           event: string | null
           extension: string

@@ -29,25 +29,40 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: deposit, error: depositError } = await supabaseAdmin
-      .from("reseller_deposits")
-      .select("*, resellers(id, user_id)")
-      .eq("id", deposit_id)
-      .maybeSingle();
-
-    if (depositError || !deposit) {
-      return new Response(JSON.stringify({ success: false, error: "Deposit tidak ditemukan" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (deposit.status !== "pending") {
-      return new Response(JSON.stringify({ success: false, error: "Deposit sudah diproses sebelumnya" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    // --- APPROVE ---
     if (action === "approve") {
+      // ATOMIC: Update status from pending→approved in ONE conditional query
+      // This prevents double-credit: if two concurrent requests come in,
+      // only one will match WHERE status='pending' and get rows_count=1
+      const { data: updatedDeposits, error: updateStatusErr } = await supabaseAdmin
+        .from("reseller_deposits")
+        .update({
+          status: "approved",
+          notes: notes || null,
+          approved_by: approved_by || null,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", deposit_id)
+        .eq("status", "pending") // <-- atomic guard: only matches if still pending
+        .select("*, resellers(id, user_id)");
+
+      if (updateStatusErr) {
+        return new Response(JSON.stringify({ success: false, error: updateStatusErr.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // If no rows updated → already processed (race condition or double-click)
+      if (!updatedDeposits || updatedDeposits.length === 0) {
+        return new Response(JSON.stringify({ success: false, error: "Deposit sudah diproses sebelumnya. Saldo tidak ditambahkan ganda." }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const deposit = updatedDeposits[0];
+
+      // Get current balance
       const { data: balData } = await supabaseAdmin
         .from("reseller_balances")
         .select("balance")
@@ -88,26 +103,38 @@ Deno.serve(async (req) => {
         created_by: approved_by || null,
       });
 
-      // Update deposit status
-      await supabaseAdmin.from("reseller_deposits").update({
-        status: "approved",
-        notes: notes || null,
-        approved_by: approved_by || null,
-        approved_at: new Date().toISOString(),
-      }).eq("id", deposit_id);
-
       return new Response(JSON.stringify({ success: true, new_balance: newBalance }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // --- REJECT ---
     if (action === "reject") {
-      await supabaseAdmin.from("reseller_deposits").update({
-        status: "rejected",
-        notes: notes || null,
-        approved_by: approved_by || null,
-        approved_at: new Date().toISOString(),
-      }).eq("id", deposit_id);
+      // Also only reject if still pending
+      const { data: rejectedDeposits, error: rejectErr } = await supabaseAdmin
+        .from("reseller_deposits")
+        .update({
+          status: "rejected",
+          notes: notes || null,
+          approved_by: approved_by || null,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", deposit_id)
+        .eq("status", "pending")
+        .select("id");
+
+      if (rejectErr) {
+        return new Response(JSON.stringify({ success: false, error: rejectErr.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!rejectedDeposits || rejectedDeposits.length === 0) {
+        return new Response(JSON.stringify({ success: false, error: "Deposit sudah diproses sebelumnya." }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -121,7 +148,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("[reseller-deposit-action]", err);
     return new Response(JSON.stringify({ success: false, error: err instanceof Error ? err.message : "Server error" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
